@@ -1,0 +1,16 @@
+| >!Boot
+|
+| Floating Help
+| (C) Stephen Fryatt, 1999
+|
+| Version 0.31
+| 1 August 2002
+
+| Comment this line out if you do not wish Float to become the default
+| interactive help client.
+
+Set Help$Start <Obey$Dir>
+
+|
+
+IconSprites <Obey$Dir>.!Sprites

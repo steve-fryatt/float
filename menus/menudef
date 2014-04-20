@@ -1,0 +1,22 @@
+/* Menus for Floating Help
+ *
+ * (C) Stephen Fryatt, 1999
+ *
+ * Version 0.30
+ * 25 June 2002
+ */
+
+menu (icon_bar_menu, "Float")
+{
+  item ("Info...")
+  {
+    d_box(info_window);
+    dotted;
+  }
+  item ("Choices...");
+  item ("Show all")
+  {
+    dotted;
+  }
+  item ("Quit");
+}

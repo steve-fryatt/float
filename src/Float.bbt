@@ -1,0 +1,1648 @@
+REM >!RunImage
+REM
+REM Floating Help
+REM (C) Stephen Fryatt, 1999
+REM
+REM Version 0.36
+REM 19 May 2003
+:
+LIBRARY "BASIC:WimpLib2"
+LIBRARY "BASIC:WimpSprite"
+LIBRARY "BASIC:Config"
+LIBRARY "BASIC:Resources"
+LIBRARY "BASIC:String"
+:
+ON ERROR VDU 4 : PRINT REPORT$;" at line ";ERL : END
+:
+PROCinitialise
+:
+ON ERROR quit%=(FNerror(task_name$)=2)
+:
+WHILE NOT quit%
+ PROCpoll
+ENDWHILE
+:
+PROCclose_down
+:
+END
+:
+:
+:
+:
+REM ====================================================================================================================
+REM Wimp poll and event handlers
+REM ====================================================================================================================
+:
+:
+:
+:
+DEF PROCpoll
+:
+REM Poll the WIMP under Wimp_PollIdle, using a gap of poll_delay% centiseconds.  The time for the
+REM next poll is found before the reason code is acted upon.
+:
+SYS "Wimp_PollIdle",&3830+((NOT display_bubbles%) AND 1),b%,next_poll% TO reason%
+:
+SYS "OS_ReadMonotonicTime" TO next_poll%
+next_poll%+=poll_delay%
+:
+CASE reason% OF
+ WHEN 0     : PROCidle_event
+ WHEN 1     : PROCredraw_bubble
+ WHEN 2     : SYS "Wimp_OpenWindow",,b%
+ WHEN 3     : SYS "Wimp_CloseWindow",,b%
+ WHEN 6     : PROCmouse_click
+ WHEN 8     : SYS "Wimp_ProcessKey",b%!24
+ WHEN 9     : PROCmenu_selection
+ WHEN 17,18 : PROCwimp_message
+ WHEN 19    : IF show_default_help% OR show_all_help% THEN PROCmake_default_task_help(icon_bar_help%)
+ENDCASE
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCidle_event
+:
+LOCAL still_time%,significant_movement%,window_change%,icon_change%,key_pressed%,mouse_released%
+LOCAL mouse_pressed%
+:
+REM Deal with idle events: monitor the mouse and produce help bubbles
+REM
+REM Get the pointer position and set up some variables to idicate the current state.
+REM significant_movement% is TRUE if the mouse has moved more than a given amount.
+REM window_icon_change% is TRUE if the window or icon under the pointer has changed since the last
+REM poll, key_pressed% is TRUE if a key or mouse button has been pressed.
+:
+SYS "Wimp_GetPointerInfo",,b%+20
+:
+significant_movement%=(ABS(b%!20-mouse_x%)>mouse_jitter% OR ABS(b%!24-mouse_y%)>mouse_jitter%)
+window_change%=(mouse_window%<>b%!32)
+icon_change%=(mouse_icon%<>b%!36)
+key_pressed%=FNkey_pressed
+mouse_pressed%=FNmouse_pressed
+mouse_released%=FNmouse_released
+:
+IF mouse_pressed% THEN mouse_drag%=TRUE
+IF mouse_drag% AND mouse_released% AND NOT significant_movement% THEN mouse_drag%=FALSE
+:
+SYS "OS_ReadMonotonicTime" TO current_time%
+still_time%=(current_time%-mouse_time%)
+:
+IF bubble_open% THEN
+ CASE TRUE OF
+  WHEN significant_movement%
+   PROCclose_bubble
+   mouse_x%=b%!20
+   mouse_y%=b%!24
+  WHEN window_change% OR icon_change%
+   PROCclose_bubble
+  WHEN (key_pressed% AND hide_on_click%)
+   PROCclose_bubble
+  WHEN (still_time%>kill_delay% AND kill_bubbles%)
+   PROCclose_bubble
+ ENDCASE
+ENDIF
+:
+IF window_change% OR icon_change% OR significant_movement% THEN
+ mouse_window%=b%!32
+ mouse_icon%=b%!36
+ mouse_x%=b%!20
+ mouse_y%=b%!24
+ SYS "OS_ReadMonotonicTime" TO mouse_time%
+ IF NOT (hide_across_drags% AND mouse_drag%) THEN waiting_to_open%=display_bubbles%
+ENDIF
+:
+IF mouse_released% THEN mouse_drag%=FALSE
+:
+IF waiting_to_open% THEN
+ IF key_pressed% THEN waiting_to_open%=FALSE
+ IF still_time%>bubble_delay% THEN
+  waiting_to_open%=FALSE
+  PROCget_help_text
+ ENDIF
+ENDIF
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCmouse_click
+:
+REM Respond to mouse clicks.
+:
+CASE b%!12 OF
+ WHEN -2
+  CASE b%!8 OF
+   WHEN 4 : PROCset_help_state(NOT display_bubbles%)
+   WHEN 2 : PROCset_menu_state(icon_bar_menu%, 2, show_all_help%, FALSE) : PROCdisplay_bar_menu(icon_bar_menu%,4,2,!b%)
+   WHEN 1 : PROCopen_choices_window(!b%,b%!4)
+  ENDCASE
+ WHEN choices_window%
+  CASE b%!8 OF
+   WHEN 4
+    CASE b%!16 OF
+     WHEN 2        : PROCset_icon_state(choices_window%,3,0,NOTFNicon_selected(choices_window%,2),0)
+     WHEN 15,18,21 : PROCdisplay_icon_menu(colours_window%,choices_window%,b%!16)
+                     colours_icon%=b%!16-1
+     WHEN 22       : PROCclose_window(choices_window%)
+     WHEN 23       : PROCclose_options_window(TRUE,TRUE)
+     WHEN 24       : PROCclose_options_window(TRUE,FALSE)
+     WHEN 29       : font_menu%=FNbuild_font_menu
+                     PROCdisplay_icon_menu(font_menu%,choices_window%,29)
+    ENDCASE
+   WHEN 1
+    CASE b%!16 OF
+     WHEN 22 : PROCopen_choices_window(-1,-1) : PROCforce_window_redraw(choices_window%)
+               SYS "Wimp_GetCaretPosition",,q%
+               IF !q%=choices_window% THEN PROCput_caret_at_end(choices_window%,q%!4)
+     WHEN 23 : PROCclose_options_window(FALSE,TRUE)
+     WHEN 24 : PROCclose_options_window(FALSE,FALSE)
+    ENDCASE
+  ENDCASE
+ WHEN colours_window%
+  IF b%!16>=1 THEN PROCset_colour_icon(choices_window%,colours_icon%,b%!16-1)
+  PROCclose_window(colours_window%)
+  PROCforce_icon_redraw(choices_window%,colours_icon%)
+ENDCASE
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCmenu_selection
+:
+REM Respond to menu selections.
+:
+LOCAL re_open_menu%
+:
+REM Check if ADJUST was used to make the selection.
+:
+SYS "Wimp_GetPointerInfo",,q%
+re_open_menu%=(q%!8=1)
+:
+REM Act on the menu choice.
+:
+CASE menu_up% OF
+ WHEN icon_bar_menu%
+  CASE !b% OF
+   WHEN 0 : OSCLI("%Filer_Run Float:!Help")
+   WHEN 1 : PROCopen_choices_window(!q%,q%!4)
+   WHEN 2 : show_all_help%=NOT show_all_help% : PROCset_menu_state(icon_bar_menu%, 2, show_all_help%, FALSE)
+   WHEN 3 : quit%=TRUE
+  ENDCASE
+ WHEN font_menu%
+  SYS "Font_DecodeMenu",0,font_menu%,b%,q%,255
+  $FNicon_indirection(choices_window%,30)=FNfont_name(FNctrl_string(q%))
+  PROCforce_icon_redraw(choices_window%,30)
+  PROCdelete_font_menu
+  IF re_open_menu% THEN font_menu%=FNbuild_font_menu
+ENDCASE
+:
+REM Re-open the menu if ADJUST was used.
+:
+IF re_open_menu% THEN PROCdisplay_menu(menu_up%,0,0)
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCwimp_message
+:
+REM Respond to WIMP messages from other tasks.
+:
+CASE b%!16 OF
+ WHEN &0     : quit%=TRUE
+ WHEN &502   : PROCsend_interactive_help
+ WHEN &503   : IF (NOT FNignore_task(b%!4)) OR show_all_help% THEN PROCexpand_text(b%+20)
+ WHEN &504   : PROCmessage_help_enable
+ WHEN &400C1 : PROCnew_mode
+ WHEN &400C2 : PROCtask_starting
+ WHEN &400C3 : PROCtask_quitting
+ WHEN &400C9 : IF b%!20=font_menu% THEN PROCdelete_font_menu
+ WHEN &400CF : PROClose_font : PROCfind_font
+ENDCASE
+ENDPROC
+:
+:
+:
+:
+REM ====================================================================================================================
+REM Initialisation and termination
+REM ====================================================================================================================
+:
+:
+:
+:
+DEF PROCinitialise
+:
+REM Initialise the program, including the WIMP.
+:
+LOCAL font_width%,os_version%,token_file$,file%,var%,len%,resources_path$
+:
+REM Set up the global data blocks and the parameters needed for WIMP registration.
+:
+DIM b% 4000, q% 255, a% 255
+:
+REM Find the correct resources for the current territory.
+:
+resources_path$=FNterritory_resources("Float:Resources")
+:
+REM Allocate space and load the message file into memory.
+:
+DIM messages% 16
+:
+SYS "MessageTrans_FileInfo",,resources_path$+"Messages" TO flags%,,size%
+REMIF flags% AND 1 THEN buffer%=0 ELSE DIM buffer% size%
+DIM buffer% size%
+SYS "MessageTrans_OpenFile",messages%,resources_path$+"Messages",buffer%
+:
+$b%="TASK"
+TASK=!b%
+:
+SYS "MessageTrans_Lookup",messages%,"Task",b%,255 TO ,,,len%
+b%?len%=13
+task_name$=$b%
+wimp_needed%=310
+:
+REM Choose what messages we accept from the WIMP.
+:
+!q%=&502     : REM Message_HelpRequest
+q%!4=&503    : REM Message_HelpReply
+q%!8=&504    : REM Message_HelpEnable
+q%!12=&400C1 : REM Message_ModeChange
+q%!16=&400C2 : REM Message_TaskInitialise
+q%!20=&400C3 : REM Message_TaskCloseDown
+q%!24=&400C9 : REM Message_MenusDeleted
+q%!28=&400CF : REM Message_FontChanged
+q%!32=0      : REM Message_Quit
+:
+REM Register as a WIMP task.
+:
+SYS "Wimp_Initialise",wimp_needed%,TASK,task_name$,q% TO wimp_version%,task_handle%
+:
+REM Set the quit flag to false so we don't quit immediately.  Get the current time ready for
+REM calling Wimp_PollIdle - this will cause the first null poll to be returned immediately.
+:
+quit%=FALSE
+SYS "OS_ReadMonotonicTime" TO next_poll%
+:
+REM Load the correct set of message tokens for the version of RISC OS we are running on at the
+REM moment.
+:
+REM Load a suitable file of message tokens.  First try in ROM, then in !Boot, then look in our own collection
+REM of versions and finally fall back onto the RISC OS 3.1 data (Tokens.164).
+:
+token_file$="Resources:$.Resources.Help.Messages"
+SYS "OS_File",17,token_file$ TO file%
+IF file%=0 THEN
+ SYS "XOS_ReadVarVal","BootResources$Path",0,-1,0,0 TO ,,var%
+ IF var%<0 THEN
+  token_file$="BootResources:!Help.Messages"
+  SYS "OS_File",17,token_file$ TO file%
+ ENDIF
+ENDIF
+IF file%=0 THEN
+ SYS "OS_Byte",129,0,&FF TO ,os_version%
+ token_file$=resources_path$+"Tokens."+FNfind_latest_resources(resources_path$+"Tokens","",os_version%)
+ SYS "OS_File",17,token_file$ TO file%
+ENDIF
+IF file%=0 THEN token_file$=resources_path$+"Tokens.164"
+:
+SYS "MessageTrans_FileInfo",,token_file$ TO flags%,,size%
+IF flags% AND 1 THEN token_buffer%=0 ELSE DIM token_buffer% size%
+SYS "OS_Module",6,,,17+LEN(token_file$) TO ,,tokens%
+$(tokens%+16)=token_file$
+SYS "MessageTrans_OpenFile",tokens%,tokens%+16,token_buffer%
+:
+REM Allocate space for the indirected icon data and load the templaes file into memory, creating the
+REM windows as we go.
+:
+ind_size%=3000
+DIM ind_area% ind_size%
+:
+PROCopen_templates(resources_path$+"Templates")
+:
+PROCload_template("Panel",b%,ind_area%,ind_size%,-1)
+SYS "Wimp_CreateWindow",,b% TO bubble_window%
+PROCload_template("ProgInfo",b%,ind_area%,ind_size%,-1)
+SYS "Wimp_CreateWindow",,b% TO prog_info_window%
+PROCload_template("Choices",b%,ind_area%,ind_size%,-1)
+SYS "Wimp_CreateWindow",,b% TO choices_window%
+PROCload_template("Colours",b%,ind_area%,ind_size%,-1)
+SYS "Wimp_CreateWindow",,b% TO colours_window%
+:
+PROCclose_templates
+:
+SYS "MessageTrans_Lookup",messages%,"Version",b%,255 TO ,,,len%
+b%?len%=13
+SYS "MessageTrans_Lookup",messages%,"Date",q%,255 TO ,,,len%
+q%?len%=13
+$FNicon_indirection(prog_info_window%,6)=$b%+" ("+$q%+")"
+:
+REM Load the sprites file into memory.
+:
+sprite_area%=FNload_user_sprite_area("Float:Sprites")
+:
+REM Load the menu definitions into memory and create the menus.
+:
+!q%=prog_info_window%
+PROCload_menu_block(resources_path$+"Menus",q%)
+icon_bar_menu%=!q%
+font_menu%=0
+:
+REM Set up all the global variables
+:
+mouse_x%=0            : REM The last known mouse X position
+mouse_y%=0            : REM The last known mouse Y position
+mouse_time%=0         : REM When the mouse was last known to be 'still'
+mouse_window%=0       : REM The last window the mouse was over
+mouse_icon%=0         : REM The last icon the mouse was over
+mouse_drag%=FALSE     : REM TRUE is the mouse is thought to be dragging
+bubble_open%=FALSE    : REM TRUE if a bubble is open
+waiting_to_open%=TRUE : REM TRUE if a bubble is still waiting to be opened
+bubble_width%=0       : REM The width (in OS units) of the current bubble
+bubble_height%=0      : REM The height (in OS units) of the current bubble
+bubble_lines%=0       : REM The number of lines of text in the current bubble
+show_all_help%=FALSE  : REM TRUE if we are to ignore the selective help settings in Choices.
+:
+REM Allocate arrays and memory blocks.
+:
+help_text_size%=4095              : REM The size of the help text buffer
+DIM help_text% help_text_size%
+DIM font_block% 35
+max_lines%=1000                   : REM The maximum number of lines of text in a bubble
+DIM start%(max_lines%),length%(max_lines%),y_offset%(max_lines%)
+:
+REM Determine if the desktop font exists.
+:
+SYS "XWimp_ReadSysInfo",8 TO ;flags%
+desktop_font_available%=((flags% AND 1)=0)
+:
+REM Set up the default configuration and load any changes
+:
+PROCinitialise_config(20,task_name$)
+:
+PROCinit_opt_config("Open bubbles",TRUE)
+PROCinit_opt_config("Close bubbles",TRUE)
+PROCinit_opt_config("Draw shadows",TRUE)
+PROCinit_opt_config("Hide over drags",TRUE)
+PROCinit_opt_config("Hide on clicks",TRUE)
+PROCinit_opt_config("Show tool help", TRUE)
+PROCinit_opt_config("Show bar help", TRUE)
+PROCinit_opt_config("Identify silent apps", FALSE)
+PROCinit_num_config("Open delay",0.6)
+PROCinit_num_config("Close delay",10)
+PROCinit_int_config("Foreground colour",7)
+PROCinit_int_config("Background colour",1)
+PROCinit_int_config("Shadow colour",6)
+PROCinit_str_config("Font name","Homerton.Bold.Oblique")
+PROCinit_num_config("Font size",10)
+PROCinit_num_config("Font aspect",100)
+PROCinit_opt_config("Font use desktop",FALSE)
+PROCinit_int_config("Mouse jitter",8)
+PROCinit_int_config("Poll delay",5)
+PROCinit_str_config("Ignore tasks","")
+:
+:
+choices_load$="Choices:Float.Choices"
+SYS "XOS_File",17,choices_load$ TO choices_type% ;flags%
+IF (flags% AND 1)<>0 OR choices_type%<>1 THEN choices_load$="Float:Choices"
+choices_save$=FNload_config_file(choices_load$)
+:
+REM Create all the config variables used in the program.
+:
+PROCsync_options
+:
+REM Set up the list of tasks to ignore.
+:
+PROCinitialise_ignore_list
+:
+REM Find the font we need to display the text and get the size of the screen mode.
+:
+SYS "Font_CacheAddr" TO font_manager_version%
+PROCfind_font
+PROCget_mode_size
+:
+REM Put an icon on the icon bar.
+:
+DIM bar_sprite% 10
+IF display_bubbles% THEN $bar_sprite%="on" ELSE $bar_sprite%="off"
+:
+!q%=-1
+q%!4=0
+q%!8=0
+q%!12=68
+q%!16=68
+q%!20=&311A
+q%!24=bar_sprite%
+q%!28=sprite_area%
+q%!32=10
+SYS "Wimp_CreateIcon",,q% TO bar_icon_handle%
+:
+PROClink_to_event_v
+:
+SYS "Wimp_SlotSize",-1,-1 TO base_slot_size%
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCclose_down
+:
+REM Close the task down, losing the font and closing the messages file first.
+:
+PROCun_link_event_v
+PROClose_font
+SYS "MessageTrans_CloseFile",messages%
+SYS "MessageTrans_CloseFile",tokens%
+SYS "Wimp_CloseDown",task_handle%,TASK
+ENDPROC
+:
+:
+:
+:
+REM ====================================================================================================================
+REM Interactive help (for our own windows and icons)
+REM ====================================================================================================================
+:
+:
+:
+:
+DEF PROCsend_interactive_help
+:
+REM Supply interactive help to any help clients out there.  This is probably us anyway...
+:
+LOCAL token$,len%
+:
+REM Try and find an appropriate token for the window and icon currently under the pointer.
+:
+token$=""
+:
+CASE b%!32 OF
+ WHEN -2                : token$="HelpH1"
+ WHEN prog_info_window% : token$="HelpH4"
+ WHEN choices_window%
+  CASE b%!36 OF
+   WHEN 0,1,2,3,4       : token$="HelpC0"+STR$(b%!36)
+   WHEN 6               : token$="HelpC05"
+   WHEN 9               : token$="HelpC06"
+   WHEN 14              : token$="HelpC07"
+   WHEN 17              : token$="HelpC08"
+   WHEN 20              : token$="HelpC09"
+   WHEN 15,18,21        : token$="HelpC10"
+   WHEN 22              : token$="HelpC11"
+   WHEN 23              : token$="HelpC12"
+   WHEN 24              : token$="HelpC13"
+   WHEN 25              : token$="HelpC14"
+   WHEN 26              : token$="HelpC15"
+   WHEN 30              : token$="HelpC16"
+   WHEN 29              : token$="HelpC17"
+   WHEN 34              : token$="HelpC18"
+   WHEN 36              : token$="HelpC19"
+   WHEN 32              : token$="HelpC20"
+   WHEN 39              : token$="HelpC21"
+   OTHERWISE            : token$="HelpCW"
+  ENDCASE
+ WHEN colours_window%   : IF b%!36>0 THEN token$="HelpCC1" ELSE token$="HelpCC0"
+ WHEN bubble_window%    : REM Don't return help on the bubble itself...
+ OTHERWISE
+  SYS "Wimp_GetMenuState",1,q%,b%!32,b%!36
+  CASE menu_up% OF
+   WHEN icon_bar_menu% : IF !q%>-1 THEN token$="Menu0"+STR$(!q%+1)
+   WHEN font_menu%     : IF !q%>-1 THEN token$="MenuFF"
+  ENDCASE
+ENDCASE
+:
+REM If a token was found, look it up and reply to the help request.
+:
+IF token$<>"" THEN
+ SYS "MessageTrans_Lookup",messages%,token$,b%+20,235 TO ,,,len%
+ :
+ b%!12=b%!8
+ b%!16=&503
+ !b%=24+(len% AND &FFFFFC)
+ SYS "Wimp_SendMessage",17,b%,b%!4
+ENDIF
+ENDPROC
+:
+:
+:
+:
+REM ====================================================================================================================
+REM Help text processing and display
+REM ====================================================================================================================
+:
+:
+:
+:
+DEF PROCget_help_text
+:
+REM Get the help text for the bubble.
+REM
+REM This procedure relies on Wimp_GetPointerInfo having been called already with a data block of
+REM b%+20 so it should only be called from the idle poll handler.  If the icon is greater than or
+REM equal to -1, the application owning the object being pointed to must be sent a
+REM Message_HelpRequest.  If the icon is less than -1, it is a bit of window furniture and
+REM PROCexpand_text can be called immediately with the result from looking up the correct text in
+REM the message file.
+:
+IF b%!32>-2 OR show_ibar_help% OR show_all_help% THEN
+ IF b%!36>=-1 THEN
+  b%!0=40
+  b%!12=0
+  b%!16=&502
+  icon_bar_help%=(b%!32=-2) AND (b%!36<>-1)
+  SYS "Wimp_SendMessage",18,b%,b%!32,b%!36 TO ,,helped_task_handle%
+ ELSE
+  IF show_tool_help% OR show_all_help% THEN
+   SYS "MessageTrans_Lookup",messages%,"HelpI"+STR$(-(b%!36)),b%,40000
+   PROCexpand_text(b%)
+  ENDIF
+ ENDIF
+ENDIF
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCmake_default_task_help(icon_bar%)
+:
+REM A task has not responded to a request.  If it was us, just ignore it.
+REM
+REM Using the task handle we recorded in PROCget_help_text the task name is looked up and inserted
+REM into the default piece of text from our messages file before passing this to PROCexpand_text.
+REM Token HelpH2 is used for icon-bar icons, HelpH3 is used for windows.
+:
+LOCAL task_name%,token$,flags%
+:
+IF helped_task_handle%<>task_handle% THEN
+ IF icon_bar% THEN token$="2" ELSE token$="3"
+ :
+ SYS "XTaskManager_TaskNameFromHandle",helped_task_handle% TO task_name% ;flags%
+ :
+ IF (flags% AND 1) =0 THEN
+  SYS "MessageTrans_Lookup",messages%,"HelpH"+token$,b%,4000,task_name%
+  PROCexpand_text(b%)
+ ENDIF
+ENDIF
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCexpand_text(original_text%)
+:
+REM Expand the text and open the bubble on the screen if help text has been received.
+REM
+REM The text must be 'escaped' to remove the \X compressions used by Acorn (including the extras
+REM used in RISC OS 3.5+), GSTrans'd and finally formatted.
+:
+LOCAL o%, h%, c%, len%
+:
+REM Start by 'escaping' the string, by expanding with the dictionary in the Messages file.
+REM
+REM For each craracter in the (control terminated) string, if it is NOT a '\' copy it straight
+REM in to the help_text% buffer and step on one.  If it is a '\', get the next charater and
+REM step on one more.  If the next character is a '\' as well, copy one '\' into the help_text%
+REM buffer and move on one character.
+REM
+REM If the second character was NOT a '\', append it to a 'T' and look up the resulting token in
+REM the Messages file dictionary.  The call is asked to put the result straight into the
+REM help_text% buffer in the correct place, before the buffer pointer is moved on by the length
+REM of the result.
+:
+o%=0
+h%=0
+:
+REPEAT
+ c%=original_text%?o%
+ o%+=1
+ :
+ IF CHR$(c%)<>"\" THEN
+  IF (INSTR("€„ˆ‰Š‹",CHR$(c%))>0) AND (symbol_font%>0) THEN
+   help_text%?h%=26
+   help_text%?(h%+1)=symbol_font%
+   help_text%?(h%+2)=c%
+   help_text%?(h%+3)=26
+   help_text%?(h%+4)=display_font%
+   h%+=5
+  ELSE
+   help_text%?h%=c%
+   h%+=1
+  ENDIF
+ ELSE
+  c%=original_text%?o%
+  o%+=1
+  :
+  IF CHR$(c%)="\" THEN
+   help_text%?h%=ASC("\")
+   h%+=1
+  ELSE
+   SYS "XMessageTrans_Lookup",tokens%,"T"+CHR$(c%),help_text%+h%,help_text_size%-h% TO ,,,len%
+   h%+=len%
+  ENDIF
+ ENDIF
+UNTIL c%<32 OR h%>=help_text_size%
+:
+REM If the expansion ended bacause the buffer was full, terminate with a message that makes this
+REM clear.
+:
+IF h%>=help_text_size% THEN
+ $(help_text%+help_text_size%-27)="...|M[help text truncated]" : help_text%?(help_text_size%-1)=0
+ELSE
+ help_text%?(h%-1)=0
+ENDIF
+:
+REM Open the bubble on the screen with the string in the help_text% buffer.  This will need to be
+REM GSTrans'd and formatted first.
+:
+PROCopen_bubble(help_text%)
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCopen_bubble(text%)
+:
+REM Given a pointer to a string needing to be GSTrans'd, do this and then open a bubble.
+:
+LOCAL line%,lines%,t%,widest%,y_offset%,actual_lines%,max_width%,width%,end%,length%,line_height%
+LOCAL r%,w%,double_end%,os_width%,os_height%,icon_bar_height%,x_pos%,y_pos%,shadow_size%
+:
+REM The control terminated string is passed through a GSTrans function to 'un-escape' the '|'
+REM characters in it.  '|M' is treated specially, as it must be converted into string terminators
+REM for the Font_ScanString routine to cope with; these are replaced with two zero bytes as
+REM terminators.  The number of lines counted is recorded from zero in lines%.
+REM
+REM r% is the read pointer, w% is the write pointer.  If the character read is not '|', it is
+REM copied to the write pointer and both r% and w% are incremented.  If it is '|', the r% is
+REM incremented and the following character is read.  If it is '|', '<' OR '"' this is copied to
+REM w% and both r% and w% are incremented.  If it is 'M' (that is '|M'), then a check is made
+REM to see if the last character written was a zero.  If it is, we must have just passed a
+REM '|M|M' sequence (or null string) and double_end% is set to terminate the parsing; if not
+REM a zero line separator is written, lines% is incremented and both r% and w% are incremented.
+REM
+REM All this complexity is needed as !Help teats '|M|M' as a terminator and misses apparent garbage
+REM that !Zap throws at it after the '|M|M'?
+:
+r%=0
+w%=0
+lines%=0
+double_end%=FALSE
+:
+REM Test for <>0 so as to allow font-change control chars through.
+:
+WHILE text%?r%<>0 AND NOT double_end%
+ IF CHR$(text%?r%)="|" THEN
+  r%+=1
+  IF CHR$(text%?r% AND &DF)="M" THEN
+   IF text%?(w%-1)<>0 THEN lines%+=1 : text%?w%=0 : w%+=1 ELSE double_end%=TRUE
+  ELSE
+   CASE CHR$(text%?r%) OF
+    WHEN "|"  : text%?w%=ASC("|")  : w%+=1
+    WHEN "<"  : text%?w%=ASC("<")  : w%+=1
+    WHEN """" : text%?w%=ASC("""") : w%+=1
+   ENDCASE
+  ENDIF
+ ELSE
+  text%?w%=text%?r%
+  w%+=1
+ ENDIF
+ :
+ r%+=1
+ENDWHILE
+:
+IF text%?(w%-1)=0 THEN lines%-=1
+:
+REM Add a terminator for those who do not end the help string with '|M'.
+:
+text%?w%=0
+:
+REM Set up the co-ordinates block as required by Font_ScanString.  font_block%!16 is a space for the
+REM possible split character.
+:
+font_block%!0=0
+font_block%!4=0
+font_block%!8=0
+font_block%!12=0
+font_block%!16=32
+:
+REM Calculate the widest the bubble can be.
+REM
+REM **** Currently we just assume that it is 600 OS units; this should depend on many factors,
+REM **** such as screen width.
+:
+SYS "Font_Converttopoints",,600 TO ,widest%
+:
+REM The string is now scanned with Font_ScanString to break it up into lines and prepare for
+REM printing.  t% is made a temporary pointer for the text buffer, y_offset% is the current line
+REM offset from the first in millipoints, actual_lines% is the number of lines to be printed,
+REM max_width% is the maximum line width in millipoints and line_height% is the millipoint line
+REM spacing, calculated on a fixed 120% from the font size in 16ths of a point.
+:
+t%=text%
+y_offset%=0
+actual_lines%=0
+max_width%=0
+SYS "Font_ReadDefn",display_font%,q% TO ,,,line_height%
+line_height%=(line_height%*1000)/16*1.2
+:
+REM For each line found above, Font_ScanString is repeatedly called to find the line lengths that
+REM will fit into the specified limit widest% in millipoints.  For each call, as long as the
+REM maximum number of lines has not been exceeded the start point in the string, number of
+REM characters and y offset are stored away for future use.  If the line is found to be the
+REM widest so far, its width is also remembered.
+REM
+REM widest% is slowly increased in the event of long lines occurring.  This prevent truncation
+REM and the window will grow approporiately.  If the line was zero long it is not added to the
+REM list of lines found.
+REM
+REM **** This should check the mode width and maybe re-scan the text above as width is increased.
+REM
+REM The t% pointer is moved on the length of the string found by Font_ScanString and if the
+REM next character is a space t% is advanced one more.  If the length of the line was non-zero
+REM the offset is advanced by one line for the line spacing.
+REM
+REM The repeat loop is stopped when a termination control character is found.  If the last line
+REM was non-zero length, a paragraph space of 1/3 line spacing is added and t% advanced across the
+REM spacing zero bytes before the rest of the lines identified above are scanned in the same way.
+:
+FOR line%=0 TO lines%
+ REPEAT
+  REPEAT
+   SYS "Font_ScanString",display_font%,t%,&00320,widest%,0,font_block% TO ,end%,,width%
+   length%=end%-t%
+   IF length%=0 THEN widest%+=500
+  UNTIL length%>0 OR ?t%=0 OR ?t%=13
+  :
+  IF actual_lines%<=max_lines% AND length%>0 THEN
+   start%(actual_lines%)=t%
+   length%(actual_lines%)=length%
+   y_offset%(actual_lines%)=y_offset%
+   actual_lines%+=1
+   IF width%>max_width% THEN max_width%=width%
+  ENDIF
+  :
+  t%+=length%
+  IF ?end%=32 THEN t%+=1
+  :
+  IF length%>0 THEN y_offset%+=line_height%
+ UNTIL ?t%=0 OR actual_lines%>max_lines%
+ :
+ IF length%>0 THEN y_offset%+=line_height%/3
+ :
+ WHILE ?t%=0
+  t%+=1
+ ENDWHILE
+NEXT line%
+:
+REM Put the bubble onto the screen, if there are any lines of text to display.
+REM
+REM First get details of the pointer position so that we know where to open the help bubble and can
+REM check if the pointer is in the icon bar (for special positioning).
+REM
+REM The bubble width (max_width%) and height (y_offset%) are converted into OS units and 16 OS units
+REM are added to allow some margins.  If the pointer is NOT over the icon bar, the bubble is
+REM positioned under the pointer if there is room, or above it otherwise (remember y_pos% is the
+REM top of the bubble).  If the pointer is over the icon bar, the bubble is positioned at the top
+REM of the bar (fixed height).
+REM
+REM The x position is set to be the pointer position (x_pos% is the left of the bubble).  It can be
+REM a minimum of 50 OS units from a screen edge, so it is then moved in if required.
+:
+IF actual_lines% THEN
+ SYS "Wimp_GetPointerInfo",,q%
+ :
+ SYS "Font_ConverttoOS",,max_width%,y_offset% TO ,os_width%,os_height%
+ os_width%+=16
+ :
+ icon_bar_height%=132
+ :
+ IF q%!12<>-2 THEN
+  IF (q%!4)-32-os_height%<icon_bar_height% THEN y_pos%=q%!4+os_height%+20 ELSE y_pos%=q%!4-48
+ ELSE
+  y_pos%=icon_bar_height%+os_height%
+ ENDIF
+ :
+ x_pos%=!q%
+ IF x_pos%<50 THEN x_pos%=50
+ IF x_pos%+os_width%>screen_width%-50 THEN x_pos%=screen_width%-50-os_width%
+ :
+ REM x_pos% and y_pos% are converted into millipoints for the Font_Paint command, with an 8 OS unit
+ REM margin added on the left.  The font start point is moved down a line as fonts paint from the
+ REM baseline up.  The size of the shadow is calculated (zero if there is no shadow).
+ REM
+ REM The bubble window is opened at the correct point to accommodate the panel and its shadow.  The
+ REM vales needed by the redraw code are stored and the bubble is marked open.
+ :
+ shadow_size%=draw_shadow%*-8
+ :
+ IF bubble_open% THEN PROCclose_window(bubble_window%)
+ :
+ !q%=bubble_window%
+ q%!4=x_pos%
+ q%!8=y_pos%-os_height%-shadow_size%
+ q%!12=x_pos%+os_width%+shadow_size%+2
+ q%!16=y_pos%+4
+ q%!20=0
+ q%!24=0
+ q%!28=-1
+ SYS "Wimp_OpenWindow",,q%
+ :
+ bubble_width%=os_width%
+ bubble_height%=os_height%
+ bubble_lines%=actual_lines%
+ :
+ IF bubble_open% THEN PROCforce_window_redraw(bubble_window%) ELSE
+ bubble_open%=TRUE
+ENDIF
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCredraw_bubble
+:
+REM Redraw the bubble window.
+REM
+REM The redraw loop is not optimised as bubbles are supposed to be on top and so the window should
+REM always be redrawn in one go.  In fact, the only real reason for a redraw is if F12, Return is
+REM pressed when a bubble is open (and then the transparent parts of the window will be wrong).
+:
+LOCAL shadow_size%,line_height%,x%,y%,x_in%,y_in%,more%,line%
+:
+REM Calculate the size of the shadow and the line height in points (120% of fint size).
+:
+shadow_size%=draw_shadow%*-8
+line_height%=(font_size%*1000)/16*1.2
+:
+REM Go into the WIMP redraw loop.
+:
+SYS "Wimp_RedrawWindow",,b% TO more%
+:
+WHILE more%
+ :
+ REM Calculate the position of the top left of the bubble window, converting this to millipoints
+ REM and pointing to the bottom of the first line of text (fonts are painted from the baseline)
+ :
+ x%=b%!4-b%!20
+ y%=b%!16-b%!24-4
+ :
+ SYS "Font_Converttopoints",,x%+8,y% TO ,x_in%,y_in%
+ y_in%-=line_height%
+ :
+ REM If there is to be a shadow, drwa it.  Then draw the box as a filled rectangle overlaid by
+ REM an open rectangle.
+ :
+ IF draw_shadow% THEN
+  SYS "Wimp_SetColour",shadow_colour%
+  RECTANGLE FILL x%+shadow_size%,y%-bubble_height%-shadow_size%,bubble_width%,bubble_height%
+ ENDIF
+ :
+ SYS "Wimp_SetColour",background_colour%
+ RECTANGLE FILL x%,y%-bubble_height%,bubble_width%,bubble_height%
+ SYS "Wimp_SetColour",text_colour%
+ RECTANGLE x%,y%-bubble_height%,bubble_width%,bubble_height%
+ :
+ REM Set the font colours and plot the text line by line.
+ :
+ SYS "Wimp_SetFontColours",,background_colour%,text_colour%
+ :
+ FOR line%=0 TO bubble_lines%-1
+  SYS "Font_Paint",display_font%,start%(line%),&380,x_in%,y_in%-y_offset%(line%),,,length%(line%)
+ NEXT line%
+ :
+ SYS "Wimp_GetRectangle",,b% TO more%
+ENDWHILE
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCclose_bubble
+:
+REM Close the help bubble.
+REM
+REM Close the backing window so the WIMP redraws the screen, then flag the bubble closed.
+:
+IF bubble_open% THEN PROCclose_window(bubble_window%)
+bubble_open%=FALSE
+ENDPROC
+:
+:
+:
+:
+REM ====================================================================================================================
+REM Configuration
+REM ====================================================================================================================
+:
+:
+:
+:
+DEF PROCopen_choices_window(x%,y%)
+:
+REM Copy the information from the configuration settings into the icons in the options window,
+REM before opening the window.
+:
+LOCAL size$
+:
+PROCset_icon_state(choices_window%,0,FNread_opt_config("Open bubbles"),0,0)
+PROCset_icon_state(choices_window%,1,kill_bubbles%,0,0)
+PROCset_icon_state(choices_window%,2,hide_on_click%,0,0)
+PROCset_icon_state(choices_window%,3,hide_across_drags%,NOT hide_on_click%,0)
+PROCset_icon_state(choices_window%,4,draw_shadow%,0,0)
+PROCset_icon_state(choices_window%,25,show_tool_help%,0,0)
+PROCset_icon_state(choices_window%,26,show_ibar_help%,0,0)
+PROCset_icon_state(choices_window%,39,show_default_help%,0,0)
+PROCset_icon_state(choices_window%,32,font_desktop% AND desktop_font_available%,NOT desktop_font_available%,0)
+:
+$FNicon_indirection(choices_window%,6)=LEFT$(STR$(bubble_delay%/100),3)
+$FNicon_indirection(choices_window%,9)=LEFT$(STR$((kill_delay%-bubble_delay%)/100),3)
+$FNicon_indirection(choices_window%,30)=font_name$
+size$=STR$(font_size%/16)
+IF INSTR(size$,".")>0 THEN size$=LEFT$(size$,INSTR(size$,".")+1)
+$FNicon_indirection(choices_window%,34)=size$
+$FNicon_indirection(choices_window%,36)=STR$(font_aspect%)
+:
+PROCset_colour_icon(choices_window%,14,text_colour%)
+PROCset_colour_icon(choices_window%,17,background_colour%)
+PROCset_colour_icon(choices_window%,20,shadow_colour%)
+:
+IF x%>=0 AND y%>=0 THEN PROCopen_window_centred(choices_window%,x%,y%)
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCclose_options_window(close%,save%)
+:
+REM Store the contents of the options window into the configuration structure and re-sync the
+REM variables used by the program. Close the window and/or save the new options.
+:
+LOCAL old_open_state%,change_open_state%,change_font%
+:
+old_open_state%=display_bubbles%
+change_open_state%=(FNread_opt_config("Open bubbles")<>FNicon_selected(choices_window%,0))
+:
+PROCset_opt_config("Open bubbles",FNicon_selected(choices_window%,0))
+PROCset_opt_config("Close bubbles",FNicon_selected(choices_window%,1))
+PROCset_opt_config("Hide on clicks",FNicon_selected(choices_window%,2))
+PROCset_opt_config("Hide over drags",FNicon_selected(choices_window%,3))
+PROCset_opt_config("Draw shadows",FNicon_selected(choices_window%,4))
+PROCset_opt_config("Show tool help",FNicon_selected(choices_window%,25))
+PROCset_opt_config("Show bar help",FNicon_selected(choices_window%,26))
+PROCset_opt_config("Identify silent apps",FNicon_selected(choices_window%,39))
+:
+PROCset_num_config("Open delay",VAL($FNicon_indirection(choices_window%,6)))
+PROCset_num_config("Close delay",VAL($FNicon_indirection(choices_window%,9)))
+:
+PROCset_str_config("Font name",FNctrl_string(FNicon_indirection(choices_window%,30)))
+PROCset_num_config("Font size",VAL($FNicon_indirection(choices_window%,34)))
+PROCset_num_config("Font aspect",VAL($FNicon_indirection(choices_window%,36)))
+IF desktop_font_available% THEN PROCset_opt_config("Font use desktop",FNicon_selected(choices_window%,32))
+:
+PROCset_num_config("Foreground colour",FNget_icon_background_colour(choices_window%,14))
+PROCset_num_config("Background colour",FNget_icon_background_colour(choices_window%,17))
+PROCset_num_config("Shadow colour",FNget_icon_background_colour(choices_window%,20))
+:
+PROCsync_options
+PROClose_font
+PROCfind_font
+IF change_open_state% THEN PROCset_help_state(display_bubbles%) ELSE PROCset_help_state(old_open_state%)
+IF close% THEN PROCclose_window(choices_window%)
+:
+IF save% THEN
+ IF choices_save$="" THEN
+  SYS "XOS_ReadVarVal","Choices$Write",0,-1,0,0 TO ,,new_choices%
+  IF new_choices%<>0 THEN
+   SYS "XOS_ReadVarVal","Choices$Write",q%,256,0,0 TO ,,len%
+   q%?len%=13
+   choices_save$=$q%+".Float"
+   SYS "OS_File",17,choices_save$ TO object%
+   IF object%=0 THEN SYS "OS_File",8,choices_save$
+   choices_save$+=".Choices"
+  ELSE
+   choices_save$="<Float$Dir>.Choices"
+  ENDIF
+ ENDIF
+ :
+ PROCsave_config_file(choices_save$)
+ENDIF
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCsync_options
+:
+REM Derive the actual veriables used by the program from the configuration information stored in the
+REM config library routines.
+:
+font_size%=FNread_num_config("Font size")*16
+font_aspect%=FNread_num_config("Font aspect")
+font_name$=FNread_str_config("Font name")
+font_desktop%=FNread_opt_config("Font use desktop") AND desktop_font_available%
+bubble_delay%=FNread_num_config("Open delay")*100
+kill_delay%=FNread_num_config("Close delay")*100+bubble_delay%
+kill_bubbles%=FNread_opt_config("Close bubbles")
+draw_shadow%=FNread_opt_config("Draw shadows")
+display_bubbles%=FNread_opt_config("Open bubbles")
+hide_across_drags%=FNread_opt_config("Hide over drags")
+hide_on_click%=FNread_opt_config("Hide on clicks")
+show_tool_help%=FNread_opt_config("Show tool help")
+show_ibar_help%=FNread_opt_config("Show bar help")
+show_default_help%=FNread_opt_config("Identify silent apps")
+:
+mouse_jitter%=FNread_int_config("Mouse jitter")
+poll_delay%=FNread_int_config("Poll delay")
+:
+text_colour%=FNread_int_config("Foreground colour")
+background_colour%=FNread_int_config("Background colour")
+shadow_colour%=FNread_int_config("Shadow colour")
+ENDPROC
+:
+:
+:
+:
+REM ====================================================================================================================
+REM Task ignore list management
+REM ====================================================================================================================
+:
+:
+:
+:
+DEF PROCinitialise_ignore_list
+:
+REM Load the list of applications that are to have their help messages ignored and congigure the
+REM list of taskhandles.
+:
+LOCAL list$, next_task%, found%
+:
+REM We can deal with this many tasks to ignore.
+:
+task_list_size%=255
+DIM ignore_tasks$(task_list_size%), ignore_task_handles%(task_list_size%)
+:
+REM Oepn the file and take it one line at a time.
+:
+list$=FNread_str_config("Ignore tasks")+","
+:
+ignore_tasks%=0
+:
+WHILE ignore_tasks%<=task_list_size% AND LEN(list$)>1
+ :
+ REM Get the next task name.
+ :
+ ignore_tasks$(ignore_tasks%)=FNstrip_surrounding_whitespace(LEFT$(list$,INSTR(list$,",")-1))
+ list$=MID$(list$,INSTR(list$,",")+1)
+ :
+ REM Look up the task in the list from the Task Manager and, if it is running, record its handle
+ REM for furture reference.  This task is made a special case since we haven't yet called
+ REM Wimp_Poll and so the task manager won't know about us yet.
+ :
+ IF FNto_upper(ignore_tasks$(ignore_tasks%))=FNto_upper(task_name$) THEN
+  ignore_task_handles%(ignore_tasks%)=task_handle%
+ ELSE
+  next_task%=0
+  found%=FALSE
+  :
+  REPEAT
+   SYS "TaskManager_EnumerateTasks",next_task%,b%,16 TO next_task%
+   IF FNto_upper(FNctrl_string(b%!4)) = FNto_upper(ignore_tasks$(ignore_tasks%)) THEN
+    ignore_task_handles%(ignore_tasks%)=!b%
+    found%=TRUE
+   ENDIF
+  UNTIL next_task%<0 OR found%
+ ENDIF
+ :
+ ignore_tasks%+=1
+ENDWHILE
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCtask_starting
+:
+REM A new task has just started, so see if it's one to ignore and add its task handle to the list
+REM if necessary.
+:
+LOCAL loop%, found%, handle_space%
+:
+REM Loop through the list of task names to see if one matches the name sent.
+:
+loop%=0
+found%=FALSE
+:
+WHILE loop%<=task_list_size% AND loop%<ignore_tasks% AND NOT found%
+ IF FNto_upper(ignore_tasks$(loop%))=FNto_upper(FNctrl_string(b%+28)) THEN
+  :
+  REM One has matched, so flag this and start looking for a space in the task handle array.
+  :
+  found%=TRUE
+  handle_space%=-1
+  :
+  REM Count up through the array until an empty space is found or the end is reached.
+  :
+  FOR loop%=0 TO ignore_tasks%-1
+   IF ignore_task_handles%(loop%)=0 AND handle_space%=-1 THEN handle_space%=loop%
+  NEXT loop%
+  :
+  REM Store the handle, either in the first space or at the end of the array.
+  :
+  IF handle_space%=-1 THEN handle_space%=ignore_tasks% : ignore_tasks%+=1
+  ignore_task_handles%(handle_space%)=b%!4
+ ENDIF
+ loop%+=1
+ENDWHILE
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCtask_quitting
+:
+REM A task has quit, so remove its task handle from the list and shrink the list if possible.
+:
+LOCAL loop%, zero%
+:
+REM Scan backwards through the list of task handles.  When a matching handle is found, zero it.
+REM While all the handles have been zero, continue to reduce the count of the handles contained in
+REM the list.
+:
+zero%=TRUE
+:
+IF ignore_tasks%>0 THEN
+ FOR loop%=ignore_tasks%-1 TO 0 STEP -1
+  IF ignore_task_handles%(loop%)=b%!4 THEN ignore_task_handles%(loop%)=0
+  IF ignore_task_handles%(loop%)<>0 THEN zero%=FALSE
+  IF zero% THEN ignore_tasks%=loop%
+ NEXT loop%
+ENDIF
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF FNignore_task(task_handle%)
+:
+REM Return TRUE if the task handle given is in the list of handles to ignore help requests from.
+:
+LOCAL loop%,ignore%
+:
+REM Scan the list of task handles to see if one matches; set the ignore flag is so.
+:
+ignore%=FALSE
+:
+IF ignore_tasks%>0 THEN
+ FOR loop%=0 TO ignore_tasks%-1
+  IF ignore_task_handles%(loop%)=task_handle% THEN ignore%=TRUE
+ NEXT loop%
+ENDIF
+:
+=ignore%
+:
+:
+:
+:
+REM ====================================================================================================================
+REM Key and mouse button event detection
+REM ====================================================================================================================
+:
+:
+:
+:
+DEF FNkey_pressed
+:
+REM Return TRUE if a key has been pressed since the last time this function was called.
+REM
+REM The value is read from the EventV routine and the flag reset for next time.
+:
+LOCAL key_pressed%
+:
+=FALSE
+key_pressed%=!code_block%
+!code_block%=0
+=key_pressed%
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF FNmouse_pressed
+:
+REM Return TRUE if a mouse button has been pressed since the last time this function was called.
+REM
+REM The value is read from the EventV routine and the flag reset for next time.
+:
+LOCAL mouse_pressed%
+=FALSE
+:
+mouse_pressed%=code_block%!8
+code_block%!8=0
+=mouse_pressed%
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF FNmouse_released
+:
+REM Return TRUE if a mouse button has been released since the last time this function was called.
+REM
+REM The value is read from the EventV routine and the flag reset for next time.
+:
+LOCAL key_released%
+=FALSE
+:
+key_released%=code_block%!4
+code_block%!4=0
+=key_released%
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROClink_to_event_v
+:
+REM Assemble a small routine to monitor for keypresses and link it to EventV.
+:
+LOCAL code_size%
+:
+REM Claim space in the RMA for the code: it can't go in our workspace as we want to monitor all the
+REM time, not just when we are paged in.
+:
+code_size%=80
+SYS "OS_Module",6,,,code_size% TO ,,code_block%
+:
+REM Assemble the code.
+:
+P%=code_block%
+L%=code_block%+code_size%
+:
+[OPT %1010
+.down_flag
+  EQUD    0
+
+.up_flag
+  EQUD    0
+
+.mouse_flag
+  EQUD    0
+
+.code
+  STMFD   R13!,{R0,R14}
+  CMP     R0,#11
+  LDMNEFD R13!,{R0,PC}
+
+  MVN     R0,#NOT-1
+  CMP     R1,#1
+  STREQ   R0,down_flag
+  CMP     R2,#&70
+  STRGE   R0,mouse_flag
+
+  CMP     R1,#1
+  LDMEQFD R13!,{R0,PC}
+
+  CMP     R2,#&70
+  STRGE   R0,up_flag
+  LDMFD   R13!,{R0,PC}
+]
+:
+REM Link the code onto the EventV list.
+:
+SYS "OS_Claim",&10,code_block%+12,0
+SYS "OS_Byte",14,&10
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCun_link_event_v
+:
+REM Revove our routine from EventV and free the space it occupied in the RMA.
+:
+SYS "OS_Byte",13,&10
+SYS "OS_Release",&10,code_block%+12,0
+SYS "OS_Module",7,,code_block%
+ENDPROC
+:
+:
+:
+:
+REM ====================================================================================================================
+REM Misc Wimp message handlers
+REM ====================================================================================================================
+:
+:
+:
+:
+DEF PROCset_help_state(new_state%)
+:
+REM Set whether bubbles are being opened and update the icon-bar icon appropriately.
+REM
+REM Mainly used by clicks on the icon bar, but also by closing the config window.
+:
+display_bubbles%=new_state%
+:
+IF display_bubbles% THEN
+ $bar_sprite%="on"
+ELSE
+ $bar_sprite%="off"
+ PROCclose_bubble
+ENDIF
+PROCforce_icon_redraw(-2,bar_icon_handle%)
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCmessage_help_enable
+:
+REM Handle Message_HelpEnable (set the help state and reload the choices if required to).
+:
+PROCset_help_state((b%!20 AND 1)=0)
+IF (b%!20 AND 2)=2 THEN
+ PROCload_config_file("Float:Choices")
+ PROCsync_options
+ENDIF
+:
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCnew_mode
+:
+REM In the event of a mode change, re-bind the font handle and get the new mode size.
+:
+LOCAL font_width%
+:
+font_width%=FNread_num_config("Font aspect")*font_size%/100
+PROClose_font
+PROCfind_font
+REMSYS "Font_LoseFont",display_font%
+REMSYS "XFont_FindFont",,FNread_str_config("Font name"),font_width%,font_size%,0,0 TO display_font% ;flags%
+REMIF (flags% AND 1) THEN SYS "Font_FindFont",,"Trinity.Medium",font_aspect%*font_size%/100,font_size%,0,0 TO display_font%
+PROCget_mode_size
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCget_mode_size
+:
+REM Set the variables screen_width% and screen_height% to be the width and height of the current
+REM mode (in OS units), derived from the relevent Mode Variables.
+:
+LOCAL m%,n%
+:
+SYS "OS_ReadModeVariable",-1,11 TO ,,m%
+SYS "OS_ReadModeVariable",-1,4  TO ,,n%
+screen_width%=m%<<n%
+:
+SYS "OS_ReadModeVariable",-1,12 TO ,,m%
+SYS "OS_ReadModeVariable",-1,5  TO ,,n%
+screen_height%=m%<<n%
+ENDPROC
+:
+:
+:
+:
+REM ====================================================================================================================
+REM Font management
+REM ====================================================================================================================
+:
+:
+:
+:
+DEF FNbuild_font_menu
+:
+LOCAL menu_buf%,ind_buf%,menu_buf_size%,ind_buf_size%,new_slot_size%,fonts_message_file$,mess_buf%,menu_title%
+:
+SYS "Font_ListFonts",,0,(1<<19),,0,,0 TO ,,,menu_buf_size%,,ind_buf_size%
+
+SYS "Wimp_SlotSize",base_slot_size%+menu_buf_size%+ind_buf_size%,-1 TO new_slot_size%
+IF new_slot_size%>=base_slot_size%+menu_buf_size%+ind_buf_size% THEN
+ menu_buf%=HIMEM
+ ind_buf%=HIMEM+menu_buf_size%
+ SYS "Font_ListFonts",,menu_buf%,&280000,menu_buf_size%,ind_buf%,ind_buf_size%,$FNicon_indirection(choices_window%,30)
+ :
+ IF font_manager_version%<=307 THEN
+  fonts_message_file$="Resources:$.Resources.Fonts.Messages"
+  SYS "OS_Module",6,,,17+LEN(fonts_message_file$) TO ,,mess_buf%
+  $(mess_buf%+16)=fonts_message_file$
+  SYS "MessageTrans_OpenFile",mess_buf%,mess_buf%+16,0
+  SYS "MessageTrans_Lookup",mess_buf%,"FontList",0 TO ,,menu_title%
+  IF LEN(FNctrl_string(menu_title%))>12 THEN
+   menu_buf%!28=menu_buf%!28 OR &10
+  ELSE
+   menu_buf%!28=menu_buf%!28 AND &FFFFFFEF
+  ENDIF
+  SYS "MessageTrans_CloseFile",mess_buf%
+  SYS "OS_Module",7,,mess_buf%
+ ENDIF
+ELSE
+ menu_buf%=0
+ENDIF
+:
+=menu_buf%
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCdelete_font_menu
+SYS "Wimp_SlotSize",base_slot_size%,-1
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF FNfont_name(s$)
+:
+LOCAL index%
+:
+index%=INSTR(s$,"\F")
+REMIF index%=0 THEN index%=INSTR(s$,"\F")
+s$=MID$(s$,index%+2)
+index%=INSTR(s$,"\")
+IF index%<>0 THEN s$=LEFT$(s$,index%-1)
+=s$
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCfind_font
+:
+using_desktop_font%=FALSE
+:
+IF desktop_font_available% AND font_desktop% THEN
+ SYS "Wimp_ReadSysInfo",8 TO display_font%,symbol_font%
+ using_desktop_font%=(display_font%<>0)
+ENDIF
+:
+IF NOT using_desktop_font% THEN
+ SYS "XFont_FindFont",,font_name$,font_aspect%*font_size%/100,font_size%,0,0 TO display_font% ;flags%
+ IF (flags% AND 1) THEN SYS "Font_FindFont",,"Trinity.Medium",font_aspect%*font_size%/100,font_size%,0,0 TO display_font%
+ SYS "XFont_FindFont",,"WIMPSymbol",font_aspect%*font_size%/100,font_size%,0,0 TO symbol_font% ;flags%
+ IF (flags% AND 1) THEN symbol_font%=0
+ENDIF
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROClose_font
+:
+IF NOT using_desktop_font% THEN SYS "Font_LoseFont",display_font% : SYS "Font_LoseFont",symbol_font%
+ENDPROC
+:
+:
+:
+:
+REM ====================================================================================================================
+REM Misc routines
+REM ====================================================================================================================
+:
+:
+:
+:
+DEF PROCset_colour_icon(w%,i%,c%)
+:
+REM Set the given icon's bacground to the correct colour and change the text to show the colour
+REM number.
+:
+LOCAL f%
+:
+IF c%>=4 AND c%<=8 THEN f%=0 ELSE f%=7
+PROCset_icon_colours(w%,i%,f%,c%)
+$FNicon_indirection(w%,i%)=STR$(c%)
+ENDPROC
