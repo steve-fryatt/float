@@ -1,0 +1,191 @@
+# Tokens for RISC OS 3.8/4.0
+#
+# Note trailing spaces...
+#
+T0:selected
+T1:Double-c
+T2:Click SELECT to specify that file icons should be arranged in the 
+T3:component
+T4: grid point
+T5: the disc in drive 
+T6:ress 
+T7: in the 
+T8:change
+T9: for triangles (in multiples of the path width).
+T@: the 
+TB:lick SELECT 
+TC: to 
+TE:select
+TF:directory
+TH: this 
+TI:change the 
+TJ:sprite
+TK: object
+TL:tion
+TM:Click SELECT (or press 
+TN: and 
+TO:display
+TP: of the 
+TQ:colour
+TU:Type a new value for the percentage of 
+TV: file
+TX: information about
+TY:current
+TZ: icon
+T^:application
+T_: or 
+Tb:This 
+Tc: of 
+Te:When you iconise a window, it's icon will be placed in the nearest free space at the 
+Tf:alarm
+Tg: in
+Th:character
+Ti:ing 
+Tj:pinboard
+Tk: a 
+Tl:Move the pointer right (or press 
+Tm: this sprite, at the position you were pointing at when you pressed MENU.
+Tn:number
+To:Click here to see a slice of colours with this 
+Tp:ent
+Tq:control
+Tr: for
+Tt:operation
+Tu:path
+Tv:e the 
+Tx: with
+Ty:To paint each 
+Tz:The Force option determines whether or not locked objects will be deleted.
+TÄ: you
+TÅ: on the 
+TÇ: file server
+TÉ: the file
+TÑ: mode
+TÖ: the general public
+TÜ:path element
+Tá:text line
+Tà: from
+Tâ:Click here
+Tä:Close the window if you don't want to 
+Tã:move the icon.
+Tå:all
+Tç: to the 
+Té:Click SELECT for 
+Tè:t of the pinboard when a tidy is carried out.
+Tê:Click SELECT to determine whether or not
+Të:This option is shaded because
+Tí: are
+Tì:desktop
+Tî:computer's clock
+Tï:To paint each ellipse, click SELECT at its centre, at a point that gives the width at the centre, and at a point on the edge.
+Tñ:name
+Tó:Press SELECT, ADJUST, 
+Tô: which
+Tö: a save box
+Tõ:background
+Tú:Move the pointer right to change the 
+Tù:Click SELECT to paint 
+Tû:Click SELECT to sort the items in this directory by their
+Tü:rectangle
+T†: will 
+T°: Either fill in the numerator and denominator, or click SELECT on the arrows, to use the given zoom factor.
+T¢:This line shows that
+T£: click SELECT at the circle centre, and at the start and end of the 
+T§:: click on a preselected common value, or type in any value in the bottom field and press RETURN.
+T•:create a 
+T¶:set the 
+Tß:Type a number and Click SELECT to 
+T©:distance between major grid points
+T™:ed 
+T´:Click SELECT to specify iconising to the 
+T¨: used for text lines (in points).
+T≠:These radio buttons control the 
+TÆ:selected objects
+TØ:open
+T∞:Either drag SELECT from the file icon to a directory display, or fill in the name of a file and click SELECT on OK, to save as a 
+T±:ing
+T≤:hen 
+T≥:search
+T¥:This window 
+Tµ:choos
+T∂:ont
+T∑:press Return
+Tπ:selection
+T∫:Click SELECT to display the 
+Tª:new 
+Tº: the current colour with the colour found when plotted.
+TΩ:width
+Tæ:allows you to 
+Tø:memory
+T¿:replac
+T¡:tically
+T¬:type
+T√: entry mode
+Tƒ: you want
+T≈:crease the 
+T∆:TinyDirs
+T«:Click SELECT to mak
+T…:disc
+T :ight
+TÀ:line
+TÃ:toggle the presence
+TÕ:lick 
+TŒ:Drag SELECT to change this component of the colour
+Tœ:change the number of minor grid points per major grid point.
+T–:enter
+T—:horizont
+T“:time
+T”: information
+T‘: at which the alarm will go off.
+T’:RETURN
+T÷:drawing
+T◊:grid
+TŸ:screen
+T⁄:ther
+T€:width of the work area of an Edit window, in terms of system font characters.
+T‹:amount by which line numbers are incremented for each new BASIC line.
+T›: for the 
+Tﬁ:To paint each rectangle, click SELECT at two opposite corners of the rectangle within the sprite window.
+Tﬂ: this sprite
+T‡: that
+T·:Click SELECT to answer the question.
+T‚:Click SELECT to back up the disc in drive 
+T„:machine
+T‰: eg. [abc] is the set of all lower case a's b's and c's
+TÂ: into
+TÊ:repeat
+TÁ:show
+TÈ:To paint each parallelogram, click SELECT at three different corners.
+TÍ: Manager
+TÎ:Move the pointer right to enter a new file type for
+TÏ:Click SELECT to de
+TÌ:currently 
+TÓ:copy
+TÔ:task
+T:text
+TÒ:Double-click SELECT to 
+TÚ: an
+TÛ: contents
+TÙ:Type in the 
+Tı:pattern
+Tˆ:This is a 
+T˜:pixels
+T˘:scale factor
+T˙:Move the pointer right to change the access bits of the 
+T˚:Drag
+T¸:ate
+T˝: alarm.
+T˛:The 
+Tˇ: to complete the 
+# Tokens that are present in all versions
+TS:Click SELECT to 
+TR:Move the pointer right to 
+TA:Click ADJUST to 
+TT:This is the 
+TG:This option is greyed out because 
+TW:This window is 
+TD:Drag SELECT to 
+Td:Drag ADJUST to 
+Tw:window
+Ts:SELECT
+Ta:ADJUST

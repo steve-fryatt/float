@@ -1,0 +1,49 @@
+REM >!Help
+REM
+REM Select help file based on available readers and selected territory.
+REM (c) Stephen Fryatt, 2001
+:
+ON ERROR PRINT REPORT$+" at line "+STR$(ERL) : END
+:
+REM Change this direcrtory as required.
+:
+resource_dir$="<Float$Dir>.Resources"
+:
+DIM b% 255
+:
+resource_path$=resource_dir$+"."+FNterritory_name
+SYS "XOS_File",5,resource_path$ TO type%
+IF type%<2 OR type%>3 THEN resource_path$=resource_dir$+".UK." ELSE resource_path$+="."
+:
+SYS "XOS_SetVarVal","Float$HelpText",resource_path$+"HelpTX",LEN(resource_path$+"HelpTX"),0,0
+:
+SYS "XOS_ReadVarVal","Alias$@RunType_3d6",b%,256,0,0 TO ;flags%
+IF (flags% AND 1) THEN file$="HelpTX" ELSE file$="HelpSH"
+:
+OSCLI("%Filer_Run "+resource_path$+file$)
+:
+END
+
+
+
+
+DEF FNterritory_name
+:
+LOCAL territory%
+:
+SYS "Territory_Number" TO territory%
+SYS "Territory_NumberToName",territory%,b%,256
+=FNzero_string(b%)
+
+
+
+
+DEF FNzero_string(string%)
+:
+LOCAL string$
+:
+WHILE ?string%<>0
+ string$+=CHR$(?string%)
+ string%+=1
+ENDWHILE
+=string$

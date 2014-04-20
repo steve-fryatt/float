@@ -1,0 +1,23 @@
+| >!Run
+|
+| Floating Help
+| (C) Stephen Fryatt, 1999
+|
+| Version 0.31
+| 1 August 2002
+
+Set Float$Dir  <Obey$Dir>
+Set Float$Path <Float$Dir>.
+
+| Comment this line out if you do not wish Float to become the default
+| interactive help client once it has been run.
+
+Set Help$Start <Float$Dir>
+
+|
+
+IconSprites Float:!Sprites
+
+WimpSlot -min 128k -max 128k
+
+Run Float:!RunImage

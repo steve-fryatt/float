@@ -1,0 +1,63 @@
+# >Messages
+#
+# Floating Help
+# (C) Stephen Fryatt, 1999
+#
+Task:Floating Help
+Version:0.36
+Date:19 May 2003
+
+HelpH1:\TFloating Help application.|MMove the pointer to receive help from other applications.|M\Stoggle help panes on and off.|M\Achange the options.
+HelpH2:\T%0 icon.
+HelpH3:This is a %0 \w.
+HelpH4:This \w displays information about Float.
+
+HelpCW:\TFloating Help options \w.|MYou can use it to change the way Floating Help operates.
+HelpC00:\Stoggle the display of help panes on and off.|MThe delay can be set on the right.
+HelpC01:\Stoggle the automatic closing of help panes on and off.|MThe delay can be set on the right.
+HelpC02:\Stoggle the closing of help panes when the mouse is clicked.
+HelpC03:\Stoggle whether panes are re-opened when a drag is finished.
+HelpC04:\Stoggle the shadows under the help panes on and off.
+HelpC05:\Ttime in seconds that the mouse must be still for before a help pane is opened.|M\Senter a new time.
+HelpC06:\Ttime in seconds that a help pane will stay open if the mouse is not moved.|M\Sto enter a new time.
+HelpC07:\Tcolour that the text is printed in help panes.|MClick \s on the right to change the colour.
+HelpC08:\Tcolour of the help pane backgrounds.|MClick \s on the right to change the colour.
+HelpC09:\Tcolour shadows under the help panes.|MClick \s on the right to change the colour.
+HelpC10:\Schange the colour of the option on the left.
+HelpC11:\Sclose the choices \w and forget any changes made.|M\Aforget any changes made so far.
+HelpC12:\Sclose the choices \w, using the changes and saving them to disc.|M\Ause the changes and save them.
+HelpC13:\Sclose the choices \w and use the changes|M\Ause the changes.
+HelpC14:\Stoggle help for \w furniture on and off.|MThis can be overridden with 'Show all' in the icon-bar menu.
+HelpC15:\Stoggle help for icons on the icon bar on and off.|MThis can be overridden with 'Show all' in the icon-bar menu.
+HelpC16:\Tfont used to display the help text.|MClick \s on the right to choose another font.
+HelpC17:\Schose another font to display the help text.
+HelpC18:\Tsize of the display font, in points.|M\Senter a new size.
+HelpC19:\Taspect ratio of the display font (width/height).|M\Senter a new ratio.
+HelpC20:\Stoggle whether or not the standard desktop font is used to display help text, instead of the outline font shown above.
+HelpC21:\Stoggle whether or not help is shown for tasks that do not respond to the help request.|MThis can be overridden with 'Show all' in the icon-bar menu.
+
+HelpCC0:\Tcolour picker \w.
+HelpCC1:\Tcolour picker \w.|M\Schoose this colour.
+
+Menu01:\Rsee information about Float.|M\Sread the help file.
+Menu02:\Schange the Floating Help options.
+Menu03:\Stoggle showing help for all parts of the Desktop, regardless of the settings in Float.
+Menu04:\Squit Float.
+
+MenuFF:\Schoose this font to display the help text.
+#
+# Window furniture help
+#
+HelpI2:\TBACK icon.|M\Smove the \w to the bottom of the pile of \ws.
+HelpI3:\TCLOSE icon.|M\Sclose the \w.
+HelpI4:\TTitle bar.|M\Sbring the \w to the top.|M\Dmove the \w around the desktop.|M\dmove the \w without affecting the order of \ws.
+HelpI5:\TTOGGLE SIZE icon.|M\Stoggle the \w size between full size and the last size displayed.
+HelpI6:\Sscroll the \w up.
+HelpI7:\Tvertical scroll bar.
+HelpI8:\Sscroll the \w down.
+HelpI9:\T\a SIZE icon.|M\Dalter the size and shape of the \w.
+HelpI10:\Sscroll the \w left.
+HelpI11:\Thorizontal scroll bar.
+HelpI12:\Sscroll the \w right.
+HelpI13:\Tedge of the \w.
+HelpI14:\TICONISE icon.|M\Siconise the \w.
