@@ -4,8 +4,8 @@
 # (C) Stephen Fryatt, 1999
 #
 Task:Floating Help
-Version:0.36
-Date:19 May 2003
+Version:0.37
+Date:16 May 2007
 
 HelpH1:\TFloating Help application.|MMove the pointer to receive help from other applications.|M\Stoggle help panes on and off.|M\Achange the options.
 HelpH2:\T%0 icon.

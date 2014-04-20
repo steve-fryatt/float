@@ -3,10 +3,10 @@ REM
 REM Floating Help
 REM (C) Stephen Fryatt, 1999
 REM
-REM Version 0.36
-REM 19 May 2003
+REM Version 0.37
+REM 16 May 2007
 :
-LIBRARY "BASIC:WimpLib"
+LIBRARY "BASIC:WimpLib2"
 LIBRARY "BASIC:WimpSprite"
 LIBRARY "BASIC:Config"
 LIBRARY "BASIC:Resources"
@@ -370,6 +370,7 @@ REM Load the menu definitions into memory and create the menus.
 PROCload_menu_block(resources_path$+"Menus",q%)
 icon_bar_menu%=!q%
 font_menu%=0
+menu_up%=0
 :
 REM Set up all the global variables
 :
@@ -655,7 +656,7 @@ REPEAT
  o%+=1
  :
  IF CHR$(c%)<>"\" THEN
-  IF (INSTR("\80\84\88\89\8A\8B",CHR$(c%))>0) AND (symbol_font%>0) THEN
+  IF (INSTR("€„ˆ‰Š‹",CHR$(c%))>0) AND (symbol_font%>0) THEN
    help_text%?h%=26
    help_text%?(h%+1)=symbol_font%
    help_text%?(h%+2)=c%
