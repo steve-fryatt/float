@@ -21,17 +21,17 @@
  * permissions and limitations under the Licence.
  */
 
-menu (icon_bar_menu, "Float")
+menu(icon_bar_menu, "Float")
 {
-  item ("Info...")
-  {
-    d_box(info_window);
-    dotted;
-  }
-  item ("Choices...");
-  item ("Show all")
-  {
-    dotted;
-  }
-  item ("Quit");
+	item("Info") {
+		d_box(info_window);
+	}
+	item("Help...") {
+		dotted;
+	}
+	item("Choices...");
+	item("Show all") {
+		dotted;
+	}
+	item("Quit");
 }

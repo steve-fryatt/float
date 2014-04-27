@@ -62,10 +62,11 @@ HelpC21:\Stoggle whether or not help is shown for tasks that do not respond to t
 HelpCC0:\Tcolour picker \w.
 HelpCC1:\Tcolour picker \w.|M\Schoose this colour.
 
-Menu01:\Rsee information about Float.|M\Sread the help file.
-Menu02:\Schange the Floating Help options.
-Menu03:\Stoggle showing help for all parts of the Desktop, regardless of the settings in Float.
-Menu04:\Squit Float.
+Menu01:\Rsee information about Float and visit its website for updates.
+Menu02:\Sread access documentation for Float.
+Menu03:\Schange the Floating Help options.
+Menu04:\Stoggle showing help for all parts of the Desktop, regardless of the settings in Float.
+Menu05:\Squit Float.
 
 MenuFF:\Schoose this font to display the help text.
 #

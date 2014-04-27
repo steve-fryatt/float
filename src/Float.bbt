@@ -168,7 +168,7 @@ CASE b%!12 OF
  WHEN -2
   CASE b%!8 OF
    WHEN 4 : PROCset_help_state(NOT display_bubbles%)
-   WHEN 2 : PROCset_menu_state(icon_bar_menu%, 2, show_all_help%, FALSE) : PROCdisplay_bar_menu(icon_bar_menu%,4,2,!b%)
+   WHEN 2 : PROCset_menu_state(icon_bar_menu%, 3, show_all_help%, FALSE) : PROCdisplay_bar_menu(icon_bar_menu%,5,2,!b%)
    WHEN 1 : PROCopen_choices_window(!b%,b%!4)
   ENDCASE
  WHEN choices_window%
@@ -226,10 +226,10 @@ REM Act on the menu choice.
 CASE menu_up% OF
  WHEN icon_bar_menu%
   CASE !b% OF
-   WHEN 0 : OSCLI("%Filer_Run Float:!Help")
-   WHEN 1 : PROCopen_choices_window(!q%,q%!4)
-   WHEN 2 : show_all_help%=NOT show_all_help% : PROCset_menu_state(icon_bar_menu%, 2, show_all_help%, FALSE)
-   WHEN 3 : quit%=TRUE
+   WHEN 1 : OSCLI("%Filer_Run Float:!Help")
+   WHEN 2 : PROCopen_choices_window(!q%,q%!4)
+   WHEN 3 : show_all_help%=NOT show_all_help% : PROCset_menu_state(icon_bar_menu%, 3, show_all_help%, FALSE)
+   WHEN 4 : quit%=TRUE
   ENDCASE
  WHEN font_menu%
   SYS "Font_DecodeMenu",0,font_menu%,b%,q%,255
