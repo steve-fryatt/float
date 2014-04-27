@@ -24,20 +24,22 @@ REM permissions and limitations under the Licence.
 :
 LIBRARY "BASIC:WimpLib"
 LIBRARY "BASIC:WimpSprite"
+LIBRARY "BASIC:WimpError"
 LIBRARY "BASIC:Config"
 LIBRARY "BASIC:Resources"
 LIBRARY "BASIC:String"
+LIBRARY "BASIC:Url"
 :
 REM These values get replaced by tokenize.
 :
 build_version$ = "1.10"
 build_date$ = "01 Jul 2009"
 :
-ON ERROR VDU 4 : PRINT REPORT$;" at line ";ERL : END
+PROCwimp_error_initialise("Float","!float") : ON ERROR result%=FNwimp_error : END
 :
 PROCinitialise
 :
-ON ERROR quit%=(FNerror(task_name$)=2)
+ON ERROR quit%=(FNwimp_error=2)
 :
 WHILE NOT quit%
  PROCpoll
@@ -76,7 +78,7 @@ CASE reason% OF
  WHEN 8     : SYS "Wimp_ProcessKey",b%!24
  WHEN 9     : PROCmenu_selection
  WHEN 17,18 : PROCwimp_message
- WHEN 19    : IF show_default_help% OR show_all_help% THEN PROCmake_default_task_help(icon_bar_help%)
+ WHEN 19    : PROCbounced_message
 ENDCASE
 ENDPROC
 :
@@ -195,6 +197,8 @@ CASE b%!12 OF
   IF b%!16>=1 THEN PROCset_colour_icon(choices_window%,colours_icon%,b%!16-1)
   PROCclose_window(colours_window%)
   PROCforce_icon_redraw(choices_window%,colours_icon%)
+ WHEN prog_info_window%
+  IF b%!16=8 THEN PROClaunch_url(FNmessage_lookup("SupportURL")):PROCdisplay_menu(-1,0,0)
 ENDCASE
 ENDPROC
 :
@@ -262,6 +266,25 @@ CASE b%!16 OF
  WHEN &400C3 : PROCtask_quitting
  WHEN &400C9 : IF b%!20=font_menu% THEN PROCdelete_font_menu
  WHEN &400CF : PROClose_font : PROCfind_font
+ WHEN &4E383 : PROCurl_bounce(b%)
+ENDCASE
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCbounced_message
+:
+REM Handle bounced WIMP messages
+:
+CASEb%!16OF
+ WHEN &502   : IF show_default_help% OR show_all_help% THEN PROCmake_default_task_help(icon_bar_help%)
+ WHEN &4AF80 : PROCurl_bounce(b%)
 ENDCASE
 ENDPROC
 :
@@ -301,9 +324,9 @@ SYS "MessageTrans_OpenFile",messages%,resources_path$+"Messages",buffer%
 $b%="TASK"
 TASK=!b%
 :
-SYS "MessageTrans_Lookup",messages%,"Task",b%,255 TO ,,,len%
-b%?len%=13
-task_name$=$b%
+task_name$=FNmessage_lookup("TaskName")
+task_sprite$=FNmessage_lookup("TaskSpr")
+PROCwimp_error_initialise(task_name$,task_sprite$)
 wimp_needed%=310
 :
 REM Choose what messages we accept from the WIMP.
@@ -316,7 +339,9 @@ q%!16=&400C2 : REM Message_TaskInitialise
 q%!20=&400C3 : REM Message_TaskCloseDown
 q%!24=&400C9 : REM Message_MenusDeleted
 q%!28=&400CF : REM Message_FontChanged
-q%!32=0      : REM Message_Quit
+q%!32=&4AF80
+q%!36=&4E383
+q%!40=0      : REM Message_Quit
 :
 REM Register as a WIMP task.
 :
@@ -525,7 +550,7 @@ token$=""
 :
 CASE b%!32 OF
  WHEN -2                : token$="HelpH1"
- WHEN prog_info_window% : token$="HelpH4"
+ WHEN prog_info_window% : IFb%!36=8 THEN token$="HelpH5" ELSE token$="HelpH4"
  WHEN choices_window%
   CASE b%!36 OF
    WHEN 0,1,2,3,4       : token$="HelpC0"+STR$(b%!36)
@@ -1662,3 +1687,20 @@ IF c%>=4 AND c%<=8 THEN f%=0 ELSE f%=7
 PROCset_icon_colours(w%,i%,f%,c%)
 $FNicon_indirection(w%,i%)=STR$(c%)
 ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF FNmessage_lookup(token$)
+:
+REM Look up a token in the messages file, returning the associated message text.
+:
+LOCAL message$
+:
+IF token$<>"" THEN SYS "MessageTrans_Lookup",messages%,token$,0 TO ,,message$ ELSE message$=token$
+=message$

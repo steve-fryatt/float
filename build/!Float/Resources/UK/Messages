@@ -20,12 +20,20 @@
 # See the Licence for the specific language governing
 # permissions and limitations under the Licence.
 
-Task:Floating Help
+TaskName:Floating Help
+TaskSpr:!float
+Version:0.40
+Date:8 July 2003
+
+SupportURL:http://www.stevefryatt.org.uk/software/float/
+
+URLFailed:Could not find an application to launch the given URL.
 
 HelpH1:\TFloating Help application.|MMove the pointer to receive help from other applications.|M\Stoggle help panes on and off.|M\Achange the options.
 HelpH2:\T%0 icon.
 HelpH3:This is a %0 \w.
 HelpH4:This \w displays information about Float.
+HelpH5:\Sopen the Float home page in your web browser, if one has been seen.
 
 HelpCW:\TFloating Help options \w.|MYou can use it to change the way Floating Help operates.
 HelpC00:\Stoggle the display of help panes on and off.|MThe delay can be set on the right.
