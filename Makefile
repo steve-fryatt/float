@@ -96,7 +96,7 @@ RUNIMAGE := !RunImage,ffb
 MENUS := Menus,ffd
 README := ReadMe,fff
 FINDHELP := !Help,ffb
-TEXTHELP := !Help,fff
+TEXTHELP := HelpText,fff
 SHHELP := Float,3d6
 LICENSE := Licence,fff
 

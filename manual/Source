@@ -36,7 +36,7 @@ If you have any comments about {f/:Float}, or would like to report any bugs that
 Updates to {f/:Float} and more programs for RISC OS computers can be found on my website at <http://www.stevefryatt.org.uk/software/=>#url>.
 
 #Align Centre
-© Stephen Fryatt, 1999-2002 (<steve@stevefryatt.org.uk=>#url mailto:steve@stevefryatt.org.uk>)
+© Stephen Fryatt, 1999-2014 (<steve@stevefryatt.org.uk=>#url mailto:steve@stevefryatt.org.uk>)
 
 A plain text version of this manual is available <here=>*Filer_Run <Float$HelpText\>>.
 #Align Left
@@ -51,7 +51,7 @@ A plain text version of this manual is available <here=>*Filer_Run <Float$HelpTe
 =============================================================================
 Float - Floating Interactive Help                                Version $$version$$
 
-(C) Stephen Fryatt, 1999-2003                  $$date$$
+(C) Stephen Fryatt, 1999-2014                  $$date$$
 =============================================================================
 </literal>
 
@@ -98,11 +98,11 @@ The necessary libraries and build tools can be found at <link ref="#url http://w
 
 <chapter title="Introduction" file="Introduction">
 
-<cite>Float</cite> is a "Floating Interactive Help" application for RISC OS.  It is intended to replace Acorn's <cite>Help</cite> application, providing interactive help in small "floating" panes that follow the mouse around the screen.  This is similar to some of the systems available on other platforms.
+<cite>Float</cite> is a &ldquo;Floating Interactive Help&rdquo; application for RISC&nbsp;OS.  It is intended to replace Acorn&rsquo;s <cite>Help</cite> application, providing interactive help in small &ldquo;floating&rdquo; panes that follow the mouse around the screen.  This is similar to some of the systems available on other platforms.
 
-<cite>Float</cite> will work with any application that supports Acorn's interactive help protocol, that is any application that works with <cite>Help</cite>.
+<cite>Float</cite> will work with any application that supports Acorn&rsquo;s interactive help protocol, that is any application that works with <cite>Help</cite>.
 
-Some of the "nice" features of <cite>Float</cite> are:
+Some of the &ldquo;nice&rdquo; features of <cite>Float</cite> are:
 
 <list>
 <li>Configurable pane appearance: font, colours and shadow can be user set
@@ -120,9 +120,9 @@ Some of the "nice" features of <cite>Float</cite> are:
 
 <chapter title="Installing Float" file="Installation">
 
-<cite>Float</cite> requires RISC OS 3 or later, or an equivalent version of the Font Manager.  It works on RISC OS 4 and has been tested on Select.  The code should be 26/32-bit neutral and ought to work on RISC OS 5.  <cite>Float</cite> can be run off a hard disc or floppy disc.
+<cite>Float</cite> requires RISC&nbsp;OS&nbsp;3 or later, or an equivalent version of the Font Manager.  It works on RISC&nbsp;OS&nbsp;4 and has been tested on Select.  The code should be 26/32-bit neutral and ought to work on RISC&nbsp;OS&nbsp;5.  <cite>Float</cite> can be run off a hard disc or floppy disc.
 
-To install Float, copy the <file>!Float</file> application to a suitable place on your disc.  If you want it to run on startup, <cite>Float</cite> should be placed in your boot sequence.  On a Risc PC or a machine with the new boot structure installed, this can be done by copying it into the <file>!Boot.Choices.Boot.Tasks</file> directory (<key>shift</key>-double-click on <file>!Boot</file> in the root directory of your hard drive, double-click on the <file>Choices</file> directory that appears, then on the <file>Boot</file> directory, then on the <file>Tasks</file> directory).  On older machines, you will have to make your own arrangements (but you will probably have made your own boot system anyway).
+To install Float, copy the <file>!Float</file> application to a suitable place on your disc.  If you want it to run on startup, <cite>Float</cite> should be placed in your boot sequence.  On a machine with the new boot structure installed, this can be done by copying it into the <file>!Boot.Choices.Boot.Tasks</file> directory (<key>shift</key>-double-click on <file>!Boot</file> in the root directory of your hard drive, double-click on the <file>Choices</file> directory that appears, then on the <file>Boot</file> directory, then on the <file>Tasks</file> directory).  On older machines, you will have to make your own arrangements (but you will probably have made your own boot system anyway).
 
 By default, <cite>Float</cite> will set the system variable &lt;Help$Start&gt; when it is seen or run by the Filer.  This makes it the default interactive help client to be loaded if one is required.
 
@@ -151,7 +151,7 @@ To restore <cite>Float</cite> as the default client, repeat the process but remo
 
 To use <cite>Float</cite>, run it in the usual way by double-clicking on its icon.  When its icon appears on the icon-bar, pointing at different bits of the desktop will cause help panes to appear after a short (user-defined) interval.  Moving the mouse causes the panes to disappear; they disappear on their own after a given time anyway or when the mouse is clicked or a key pressed.
 
-The panes can be toggled on and off by clicking <mouse>select</mouse> on the <cite>Float</cite> icon on the icon-bar.  When it is "greyed out", no help is provided: this can allow you to get on without the help getting in the way.
+The panes can be toggled on and off by clicking <mouse>select</mouse> on the <cite>Float</cite> icon on the icon-bar.  When it is &ldquo;greyed out&rdquo;, no help is provided: this can allow you to get on without the help getting in the way.
 
 </chapter>
 
@@ -161,11 +161,11 @@ The panes can be toggled on and off by clicking <mouse>select</mouse> on the <ci
 
 <chapter title="User Choices" file="Choices">
 
-Clicking <mouse>adjust</mouse> on the <cite>Float</cite> icon or selecting <menu>Choices...</menu> from the icon-bar menu allows many aspects of Floating Help's operation to be altered.
+Clicking <mouse>adjust</mouse> on the <cite>Float</cite> icon or selecting <menu>Choices...</menu> from the icon-bar menu allows many aspects of Floating Help&rsquo;s operation to be altered.
 
-<icon>Open panes</icon> determines whether help panes are shown or not.  This is not quite the same as clicking <mouse>select</mouse> on the icon-bar, as it also takes effect when <cite>Float</cite> is next run.  If you change this setting, the new state is reflected on the icon-bar when you click on <icon>OK</icon> or <icon>Cancel</icon>, if you don't change it the icon-bar is not updated even if the two states are different (if you see what I mean ;-).
+<icon>Open panes</icon> determines whether help panes are shown or not.  This is not quite the same as clicking <mouse>select</mouse> on the icon-bar, as it also takes effect when <cite>Float</cite> is next run.  If you change this setting, the new state is reflected on the icon-bar when you click on <icon>OK</icon> or <icon>Cancel</icon>, if you don&rsquo;t change it the icon-bar is not updated even if the two states are different (if you see what I mean ;-).
 
-<icon>Open after</icon> is the time, in seconds, that the mouse must be "stationary" for before a pane is displayed.  Stationary means that it does not move more than, by default, 8 OS units in any direction.
+<icon>Open after</icon> is the time, in seconds, that the mouse must be &ldquo;stationary&rdquo; for before a pane is displayed.  Stationary means that it does not move more than, by default, 8 OS units in any direction.
 
 <icon>Auto close panes</icon> determines whether panes are closed after a given time.  If set, panes will be closed after being open the number of seconds given in the <icon>Close after</icon> field.
 
@@ -175,13 +175,13 @@ Clicking <mouse>adjust</mouse> on the <cite>Float</cite> icon or selecting <menu
 
 <icon>Show help for window furniture</icon> allows the user to decide whether or not help should be shown for the furniture around the edge of a window.  If this is off, the potentially distracting messages will not appear.  This can be temporarily overridden by the <menu>Show all</menu> option in the icon-bar menu.
 
-<icon>Show help over icon bar</icon> selects whether or not help is given for the icons on the icon bar.  When on, help is given for all the icons (with the information being 'made up' for those applications who do not provide help; see below).  This setting is ignored (with messages being  displayed) if <menu>Show all</menu> is ticked in the icon-bar menu.
+<icon>Show help over icon bar</icon> selects whether or not help is given for the icons on the icon bar.  When on, help is given for all the icons (with the information being &lsquo;made up&rsquo; for those applications who do not provide help; see below).  This setting is ignored (with messages being  displayed) if <menu>Show all</menu> is ticked in the icon-bar menu.
 
 <icon>Show default message</icon> determines whether or not <cite>Float</cite> will make up messages for applications not responding to the help requests.  This message will just identify the application that the window (or icon bar icon) belongs to.  If <menu>Show all</menu> in the icon-bar menu is ticked, these messages will appear regardless of this setting.
 
 The colours section specifies the colours for the text and pane borders, the background and the shadows.  Click <mouse>select</mouse> on the menu icons and choose new colours from the palette that appears.
 
-The font section selects the font used to display the help text.  The font can be changed by clicking <mouse>select</mouse> on the menu icon to the right of the <icon>Font</icon> field; its size and aspect ratio (the width divided by the height) can also be set.  If you have RISC OS 3.5 or later, <icon>Use desktop font</icon> will ignore these choices and use the currently selected desktop font; if the System font is being used then the first set of choices will still be used.
+The font section selects the font used to display the help text.  The font can be changed by clicking <mouse>select</mouse> on the menu icon to the right of the <icon>Font</icon> field; its size and aspect ratio (the width divided by the height) can also be set.  If you have RISC&nbsp;OS&nbsp;3.5 or later, <icon>Use desktop font</icon> will ignore these choices and use the currently selected desktop font; if the System font is being used then the first set of choices will still be used.
 
 All the choices are stored in a file called <file>Choices</file>.  Depending on whether the machine has a new Boot structure, this will either be at <file>Choices:Float.Choices</file> or at <file>!Float.Choices</file>.  The default options can be restored by deleting this file; you should always do this before letting anyone have a copy of <cite>Float</cite> if the file is stored inside the application.  Note that if all the options are default there may not be a <file>Choices</file> file present at all.
 
@@ -215,7 +215,7 @@ Ignore tasks: Filer, Pinboard, Task Manager, Floating Help
 
 <cite>Float</cite> will need to be reloaded to make changes made to the <file>Choices</file> file take effect.
 
-Some of these 'extra' options will be given a proper front-end in the <window>choices window</window> in a future version.
+Some of these &lsquo;extra&rsquo; options will be given a proper front-end in the <window>choices window</window> in a future version.
 
 </chapter>
 
@@ -227,13 +227,13 @@ Some of these 'extra' options will be given a proper front-end in the <window>ch
 
 As far as I know there are no bugs in <cite>Float</cite>, although I will probably be proved wrong.  There are one or two known limitations, though.
 
-<cite>Float</cite> does not deal fully with the GSTrans specification when it parses help messages.  It will treat <code>|M</code> as a line (or paragraph) break, and it will substitute <code>|</code>, <code>&lt;</code> and <code>"</code> for <code>||</code>, <code>|&lt;</code> and <code>|"</code> respectively, but all other GSTrans codes are currently ignored (and stripped out).  If you do something like <code>|G</code> or <code>|!)</code> it will not work (the first being ignored and the second coming out as <code>)</code> instead of the copyright symbol).
+<cite>Float</cite> does not deal fully with the GSTrans specification when it parses help messages.  It will treat <code>|M</code> as a line (or paragraph) break, and it will substitute <code>|</code>, <code>&lt;</code> and <code>&quot;</code> for <code>||</code>, <code>|&lt;</code> and <code>|&quot;</code> respectively, but all other GSTrans codes are currently ignored (and stripped out).  If you do something like <code>|G</code> or <code>|!)</code> it will not work (the first being ignored and the second coming out as <code>)</code> instead of the copyright symbol).
 
-Two consecutive line breaks (<code>|M|M</code>) are treated as a string terminator. This is deliberate, as it appears to be what Acorn's <cite>Help</cite> does, but it does not appear to be in the specification in the PRMs.  Unfortunately, some programs appear to "make use of" this feature by putting garbage between the <code>|M|M</code> and the help text terminator.
+Two consecutive line breaks (<code>|M|M</code>) are treated as a string terminator. This is deliberate, as it appears to be what Acorn&rsquo;s <cite>Help</cite> does, but it does not appear to be in the specification in the PRMs.  Unfortunately, some programs appear to &ldquo;make use of&rdquo; this feature by putting garbage between the <code>|M|M</code> and the help text terminator.
 
 All control characters in the help text are also treated as terminators. This does not follow the spec, which states that a char 0 is the terminator, but some applications use char 13 to terminate and yet more do other nasty things.
 
-Some of the pane hiding features (such as 'hide across drags') do not always work as expected.  This is because the WIMP does not always talk to <cite>Float</cite> enough, especially when dragging and scrolling windows.  I am looking into fixing this.
+Some of the pane hiding features (such as &lsquo;hide across drags&rsquo;) do not always work as expected.  This is because the WIMP does not always talk to <cite>Float</cite> enough, especially when dragging and scrolling windows.  I am looking into fixing this.
 
 Finally, if a screen refresh occurs (for example by pressing <key>F12</key> followed by <key>return</key>) the area immediately around the pane will be corrupted, especially if a shadow is present.  This is a limitation of the way transparent windows are handled by the WIMP, but it is not harmful.
 
@@ -277,7 +277,7 @@ The following is a list of ideas that will hopefully be added to future versions
 <subhead title="0.03 (16 March 1999)">
 
 <list>
-<li>Fixed problems with different help abbreviations in different versions of RISC OS.
+<li>Fixed problems with different help abbreviations in different versions of RISC&nbsp;OS.
 <li>Fixed bug causing lockup for null help texts.
 <li>Added option to hide help from window furniture.
 <li>Added <mouse>adjust</mouse> click on icon-bar to open Choices window.
@@ -299,7 +299,7 @@ The following is a list of ideas that will hopefully be added to future versions
 <list>
 <li>Tidied up and improved the bubble opening and closing code.
 <li>Option to display default text for windows that do not respond to help requests.
-<li>RISC OS 4 compliant.
+<li>RISC&nbsp;OS&nbsp;4 compliant.
 </list>
 
 
@@ -314,8 +314,8 @@ The following is a list of ideas that will hopefully be added to future versions
 <subhead title="0.07 (10 February 2001)">
 
 <list>
-<li>Help pane has bit 23 of the window flags set, to make operation on RISC OS 4 better.
-<li>Font options are now set from the Choices window; an option has been added to allow the desktop font to be used under RISC OS 3.5 or above.
+<li>Help pane has bit 23 of the window flags set, to make operation on RISC&nbsp;OS&nbsp;4 better.
+<li>Font options are now set from the Choices window; an option has been added to allow the desktop font to be used under RISC&nbsp;OS&nbsp;3.5 or above.
 <li>Problem with swallowed F12 keypresses has been fixed (occurred if Choices had the caret).
 </list>
 
@@ -338,10 +338,10 @@ The following is a list of ideas that will hopefully be added to future versions
 <subhead title="0.20 (25 June 2001)">
 
 <list>
-<li>Now uses ROM Messages for token expansion and furniture messages so it will work 'out of the box' on any version of RISC OS (thanks to Justin Fletcher for pointing this out).
+<li>Now uses ROM Messages for token expansion and furniture messages so it will work &lsquo;out of the box&rsquo; on any version of RISC&nbsp;OS (thanks to Justin Fletcher for pointing this out).
 <li>Possible bug with Messages file fixed.
 <li>Help file linked to icon-bar menu.
-<li>Templates tidied up for RISC OS 4.
+<li>Templates tidied up for RISC&nbsp;OS&nbsp;4.
 </list>
 
 
@@ -370,7 +370,7 @@ The following is a list of ideas that will hopefully be added to future versions
 <subhead title="0.24 (3 July 2001)">
 
 <list>
-<li>Hopefully fixed problems which allowed the Desktop font to be selected on RISC OS 3.1.
+<li>Hopefully fixed problems which allowed the Desktop font to be selected on RISC&nbsp;OS&nbsp;3.1.
 <li>Stopped the state of the icon-bar icon getting confused when the choices were applied (ie. it could show on when actually off).
 </list>
 
@@ -393,14 +393,14 @@ The following is a list of ideas that will hopefully be added to future versions
 <subhead title="0.27 (26 February 2002)">
 
 <list>
-<li>Fixed bug that prevented expansion of '\\' in help texts from working.
+<li>Fixed bug that prevented expansion of &lsquo;\\&rsquo; in help texts from working.
 </list>
 
 
 <subhead title="0.28 (17 June 2002)">
 
 <list>
-<li>Supports the use of the WIMPSymbol font for RISC OS 3.5 and later, so that symbols like 'shift' appear correctly in help texts.
+<li>Supports the use of the WIMPSymbol font for RISC&nbsp;OS&nbsp;3.5 and later, so that symbols like &lsquo;shift&rsquo; appear correctly in help texts.
 </list>
 
 
@@ -414,7 +414,7 @@ The following is a list of ideas that will hopefully be added to future versions
 <subhead title="0.30 (25 June 2002)">
 
 <list>
-<li>'Show all' option added to icon-bar menu.
+<li>&lsquo;Show all&rsquo; option added to icon-bar menu.
 </list>
 
 
@@ -458,18 +458,11 @@ The following is a list of ideas that will hopefully be added to future versions
 </list>
 
 
-<subhead title="0.38 (6 July 2003)">
+<subhead title="Test Build">
 
 <list>
 <li>Added <icon>Website</icon> button to <window>Program Info</window> window.
-</list>
-
-
-<subhead title="0.40 (8 July 2003)">
-
-<list>
-<li>Changed error system to use Locate's WimpError library.
-<li>Split <window>Choices</window> window into <icon>Display</icon> and <icon>Appearance</icon> tabs.
+<li>Changed error system to use Locate 1&rsquo;s WimpError library.
 </list>
 
 </chapter>
