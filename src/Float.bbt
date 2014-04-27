@@ -553,8 +553,8 @@ CASE b%!32 OF
  OTHERWISE
   SYS "Wimp_GetMenuState",1,q%,b%!32,b%!36
   CASE menu_up% OF
-   WHEN icon_bar_menu% : IF !q%>-1 THEN token$="Menu0"+STR$(!q%+1)
-   WHEN font_menu%     : IF !q%>-1 THEN token$="MenuFF"
+   WHEN icon_bar_menu%  : IF !q%>-1 THEN token$="Menu0"+STR$(!q%+1)
+   WHEN font_menu%      : IF !q%>-1 THEN token$="MenuFF"
   ENDCASE
 ENDCASE
 :
