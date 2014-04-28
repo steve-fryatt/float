@@ -1122,7 +1122,7 @@ REM ----------------------------------------------------------------------------
 :
 :
 :
-DEFPROCopen_choices_pane(V%)
+DEF PROCopen_choices_pane(V%)
 
 !q%=choices_pane%(current_choices_pane%)
 SYS&400CB,,q%
@@ -1170,7 +1170,7 @@ PROCset_opt_config("Draw shadows",FNicon_selected(choices_pane%(1),0))
 PROCset_str_config("Font name",FNctrl_string(FNicon_indirection(choices_pane%(1),&F)))
 PROCset_num_config("Font size",VAL($FNicon_indirection(choices_pane%(1),19)))
 PROCset_num_config("Font aspect",VAL($FNicon_indirection(choices_pane%(1),21)))
-IFdesktop_font_available%THENPROCset_opt_config("Font use desktop",FNicon_selected(choices_pane%(1),17))
+IF desktop_font_available% THEN PROCset_opt_config("Font use desktop",FNicon_selected(choices_pane%(1),17))
 :
 PROCset_num_config("Foreground colour",FNget_icon_background_colour(choices_pane%(1),4))
 PROCset_num_config("Background colour",FNget_icon_background_colour(choices_pane%(1),7))
