@@ -36,28 +36,33 @@ HelpH4:This \w displays information about Float.
 HelpH5:\Sopen the Float home page in your web browser, if one has been seen.
 
 HelpCW:\TFloating Help options \w.|MYou can use it to change the way Floating Help operates.
+HelpCW0:\Sclose the choices \w and forget any changes made.|M\Aforget any changes made so far.
+HelpCW1:\Sclose the choices \w, using the changes and saving them to disc.|M\Ause the changes and save them.
+HelpCW2:\Sclose the choices \w and use the changes|M\Ause the changes.
+HelpCW3:\Sset options concerning the display of help panes and the types of messages offered.
+HelpCW4:\Sset options concerning the font and colours used in the help panes.
+HelpCW5:\Sset a list of tasks for Float to ignore.
+
 HelpC00:\Stoggle the display of help panes on and off.|MThe delay can be set on the right.
 HelpC01:\Stoggle the automatic closing of help panes on and off.|MThe delay can be set on the right.
 HelpC02:\Stoggle the closing of help panes when the mouse is clicked.
 HelpC03:\Stoggle whether panes are re-opened when a drag is finished.
-HelpC04:\Stoggle the shadows under the help panes on and off.
-HelpC05:\Ttime in seconds that the mouse must be still for before a help pane is opened.|M\Senter a new time.
-HelpC06:\Ttime in seconds that a help pane will stay open if the mouse is not moved.|M\Sto enter a new time.
-HelpC07:\Tcolour that the text is printed in help panes.|MClick \s on the right to change the colour.
-HelpC08:\Tcolour of the help pane backgrounds.|MClick \s on the right to change the colour.
-HelpC09:\Tcolour shadows under the help panes.|MClick \s on the right to change the colour.
-HelpC10:\Schange the colour of the option on the left.
-HelpC11:\Sclose the choices \w and forget any changes made.|M\Aforget any changes made so far.
-HelpC12:\Sclose the choices \w, using the changes and saving them to disc.|M\Ause the changes and save them.
-HelpC13:\Sclose the choices \w and use the changes|M\Ause the changes.
-HelpC14:\Stoggle help for \w furniture on and off.|MThis can be overridden with 'Show all' in the icon-bar menu.
-HelpC15:\Stoggle help for icons on the icon bar on and off.|MThis can be overridden with 'Show all' in the icon-bar menu.
+HelpC04:\Ttime in seconds that the mouse must be still for before a help pane is opened.|M\Senter a new time.
+HelpC05:\Ttime in seconds that a help pane will stay open if the mouse is not moved.|M\Sto enter a new time.
+HelpC06:\Stoggle help for \w furniture on and off.|MThis can be overridden with 'Show all' in the icon-bar menu.
+HelpC07:\Stoggle help for icons on the icon bar on and off.|MThis can be overridden with 'Show all' in the icon-bar menu.
+HelpC08:\Stoggle whether or not help is shown for tasks that do not respond to the help request.|MThis can be overridden with 'Show all' in the icon-bar menu.
+
+HelpC10:\Stoggle the shadows under the help panes on and off.
+HelpC11:\Tcolour that the text is printed in help panes.|MClick \s on the right to change the colour.
+HelpC12:\Schange the colour of the option on the left.
+HelpC13:\Tcolour of the help pane backgrounds.|MClick \s on the right to change the colour.
+HelpC14:\Tcolour shadows under the help panes.|MClick \s on the right to change the colour.
+HelpC15:\Schose another font to display the help text.
 HelpC16:\Tfont used to display the help text.|MClick \s on the right to choose another font.
-HelpC17:\Schose another font to display the help text.
+HelpC17:\Stoggle whether or not the standard desktop font is used to display help text, instead of the outline font shown above.
 HelpC18:\Tsize of the display font, in points.|M\Senter a new size.
 HelpC19:\Taspect ratio of the display font (width/height).|M\Senter a new ratio.
-HelpC20:\Stoggle whether or not the standard desktop font is used to display help text, instead of the outline font shown above.
-HelpC21:\Stoggle whether or not help is shown for tasks that do not respond to the help request.|MThis can be overridden with 'Show all' in the icon-bar menu.
 
 HelpCC0:\Tcolour picker \w.
 HelpCC1:\Tcolour picker \w.|M\Schoose this colour.

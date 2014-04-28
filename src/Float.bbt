@@ -26,6 +26,7 @@ LIBRARY "BASIC:WimpLib"
 LIBRARY "BASIC:WimpSprite"
 LIBRARY "BASIC:WimpError"
 LIBRARY "BASIC:Config"
+LIBRARY "BASIC:Icon"
 LIBRARY "BASIC:Resources"
 LIBRARY "BASIC:String"
 LIBRARY "BASIC:Url"
@@ -72,7 +73,9 @@ next_poll%+=poll_delay%
 CASE reason% OF
  WHEN 0     : PROCidle_event
  WHEN 1     : PROCredraw_bubble
- WHEN 2     : SYS "Wimp_OpenWindow",,b%
+ WHEN 2     : IF !b%=choices_window% THEN PROCopen_choices_pane(b%)
+              SYS "Wimp_OpenWindow",,b%
+              IF!b%=choices_window% THEN PROCopen_choices_pane(b%)
  WHEN 3     : SYS "Wimp_CloseWindow",,b%
  WHEN 6     : PROCmouse_click
  WHEN 8     : SYS "Wimp_ProcessKey",b%!24
@@ -175,28 +178,40 @@ CASE b%!12 OF
   CASE b%!8 OF
    WHEN 4
     CASE b%!16 OF
-     WHEN 2        : PROCset_icon_state(choices_window%,3,0,NOTFNicon_selected(choices_window%,2),0)
-     WHEN 15,18,21 : PROCdisplay_icon_menu(colours_window%,choices_window%,b%!16)
-                     colours_icon%=b%!16-1
-     WHEN 22       : PROCclose_window(choices_window%)
-     WHEN 23       : PROCclose_options_window(TRUE,TRUE)
-     WHEN 24       : PROCclose_options_window(TRUE,FALSE)
-     WHEN 29       : font_menu%=FNbuild_font_menu
-                     PROCdisplay_icon_menu(font_menu%,choices_window%,29)
+     WHEN 0     : PROCclose_window(choices_window%) : PROCclose_window(choices_pane%(current_choices_pane%))
+     WHEN 1     : PROCclose_options_window(TRUE,TRUE)
+     WHEN 2     : PROCclose_options_window(TRUE,FALSE)
+     WHEN 4,5,6 : PROCclose_window(choices_pane%(current_choices_pane%)) : current_choices_pane%=b%!16-4:!b%=choices_window%:SYS&400CB,,b%:PROCopen_choices_pane(b%):SYS&400C5,,b%
     ENDCASE
    WHEN 1
     CASE b%!16 OF
-     WHEN 22 : PROCopen_choices_window(-1,-1) : PROCforce_window_redraw(choices_window%)
-               SYS "Wimp_GetCaretPosition",,q%
-               IF !q%=choices_window% THEN PROCput_caret_at_end(choices_window%,q%!4)
-     WHEN 23 : PROCclose_options_window(FALSE,TRUE)
-     WHEN 24 : PROCclose_options_window(FALSE,FALSE)
+     WHEN 0     : PROCopen_choices_window(-1,-1) : PROCforce_window_redraw(choices_window%)
+                  SYS "Wimp_GetCaretPosition",,q%
+                  IF!q%=choices_pane%(current_choices_pane%) THEN PROCput_caret_at_end(choices_pane%(current_choices_pane%),q%!4)
+     WHEN 1     : PROCclose_options_window(FALSE,TRUE)
+     WHEN 2     : PROCclose_options_window(FALSE,FALSE)
+     WHEN 4,5,6 : PROCset_icon_selected(choices_window%,b%!16,TRUE) : PROCclose_window(choices_pane%(current_choices_pane%)):current_choices_pane%=b%!16-4:!b%=choices_window%:SYS&400CB,,b%:PROCopen_choices_pane(b%):SYS&400C5,,b%
+    ENDCASE
+  ENDCASE
+ WHENchoices_pane%(0)
+  CASEb%!8OF
+   WHEN4
+    CASEb%!16OF
+     WHEN4:PROCset_icon_state(choices_pane%(0),5,0,NOTFNicon_selected(choices_pane%(0),4),0)
+    ENDCASE
+  ENDCASE
+ WHENchoices_pane%(1)
+  CASEb%!8OF
+   WHEN4
+    CASEb%!16OF
+     WHEN5,8,&B:PROCdisplay_icon_menu(colours_window%,choices_pane%(1),b%!16):colours_icon%=b%!16-1
+     WHEN&E:font_menu%=FNbuild_font_menu:PROCdisplay_icon_menu(font_menu%,choices_pane%(1),&E)
     ENDCASE
   ENDCASE
  WHEN colours_window%
-  IF b%!16>=1 THEN PROCset_colour_icon(choices_window%,colours_icon%,b%!16-1)
+  IF b%!16>=1 THEN PROCset_colour_icon(choices_pane%(1),colours_icon%,b%!16-1)
   PROCclose_window(colours_window%)
-  PROCforce_icon_redraw(choices_window%,colours_icon%)
+  PROCforce_icon_redraw(choices_pane%(1),colours_icon%)
  WHEN prog_info_window%
   IF b%!16=8 THEN PROClaunch_url(FNmessage_lookup("SupportURL")):PROCdisplay_menu(-1,0,0)
 ENDCASE
@@ -233,8 +248,8 @@ CASE menu_up% OF
   ENDCASE
  WHEN font_menu%
   SYS "Font_DecodeMenu",0,font_menu%,b%,q%,255
-  $FNicon_indirection(choices_window%,30)=FNfont_name(FNctrl_string(q%))
-  PROCforce_icon_redraw(choices_window%,30)
+  $FNicon_indirection(choices_pane%(1),15)=FNfont_name(FNctrl_string(q%))
+  PROCforce_icon_redraw(choices_pane%(1),15)
   PROCdelete_font_menu
   IF re_open_menu% THEN font_menu%=FNbuild_font_menu
 ENDCASE
@@ -386,6 +401,7 @@ REM windows as we go.
 :
 ind_size%=3000
 DIM ind_area% ind_size%
+DIM choices_pane%(2)
 :
 PROCopen_templates(resources_path$+"Templates")
 :
@@ -395,6 +411,12 @@ PROCload_template("ProgInfo",b%,ind_area%,ind_size%,-1)
 SYS "Wimp_CreateWindow",,b% TO prog_info_window%
 PROCload_template("Choices",b%,ind_area%,ind_size%,-1)
 SYS "Wimp_CreateWindow",,b% TO choices_window%
+PROCload_template("Choices0",b%,ind_area%,ind_size%,-1)
+SYS "Wimp_CreateWindow",,b% TO choices_pane%(0)
+PROCload_template("Choices1",b%,ind_area%,ind_size%,-1)
+SYS "Wimp_CreateWindow",,b% TO choices_pane%(1)
+PROCload_template("Choices2",b%,ind_area%,ind_size%,-1)
+SYS "Wimp_CreateWindow",,b% TO choices_pane%(2)
 PROCload_template("Colours",b%,ind_area%,ind_size%,-1)
 SYS "Wimp_CreateWindow",,b% TO colours_window%
 :
@@ -553,26 +575,30 @@ CASE b%!32 OF
  WHEN prog_info_window% : IFb%!36=8 THEN token$="HelpH5" ELSE token$="HelpH4"
  WHEN choices_window%
   CASE b%!36 OF
-   WHEN 0,1,2,3,4       : token$="HelpC0"+STR$(b%!36)
-   WHEN 6               : token$="HelpC05"
-   WHEN 9               : token$="HelpC06"
-   WHEN 14              : token$="HelpC07"
-   WHEN 17              : token$="HelpC08"
-   WHEN 20              : token$="HelpC09"
-   WHEN 15,18,21        : token$="HelpC10"
-   WHEN 22              : token$="HelpC11"
-   WHEN 23              : token$="HelpC12"
-   WHEN 24              : token$="HelpC13"
-   WHEN 25              : token$="HelpC14"
-   WHEN 26              : token$="HelpC15"
-   WHEN 30              : token$="HelpC16"
-   WHEN 29              : token$="HelpC17"
-   WHEN 34              : token$="HelpC18"
-   WHEN 36              : token$="HelpC19"
-   WHEN 32              : token$="HelpC20"
-   WHEN 39              : token$="HelpC21"
+   WHEN 0,1,2           : token$="HelpCW"+STR$(b%!36)
+   WHEN 4,5,6           : token$="HelpCW"+STR$(b%!36-1)
    OTHERWISE            : token$="HelpCW"
   ENDCASE
+ WHEN choices_pane%(0)
+  CASE b%!36 OF
+   WHEN 2,3,4,5         : token$="HelpC0"+STR$(b%!36-2)
+   WHEN 7               : token$="HelpC0"+STR$(b%!36-3)
+   WHEN 10              : token$="HelpC0"+STR$(b%!36-5)
+   WHEN 14,15,16        : token$="HelpC0"+STR$(b%!36-8)
+  ENDCASE
+ WHEN choices_pane%(1)
+  CASE b%!36 OF
+   WHEN 0               : token$="HelpC1"+STR$(b%!36)
+   WHEN 4               : token$="HelpC1"+STR$(b%!36-3)
+   WHEN 7               : token$="HelpC1"+STR$(b%!36-4)
+   WHEN 10              : token$="HelpC1"+STR$(b%!36-6)
+   WHEN 5,8,22          : token$="HelpC12"
+   WHEN 14,15           : token$="HelpC1"+STR$(b%!36-9)
+   WHEN 17              : token$="HelpC1"+STR$(b%!36-10)
+   WHEN 19              : token$="HelpC1"+STR$(b%!36-11)
+   WHEN 21              : token$="HelpC1"+STR$(b%!36-12)
+  ENDCASE
+ WHEN choices_pane%(2)  : token$="HelpCC0"
  WHEN colours_window%   : IF b%!36>0 THEN token$="HelpCC1" ELSE token$="HelpCC0"
  WHEN bubble_window%    : REM Don't return help on the bubble itself...
  OTHERWISE
@@ -1039,31 +1065,78 @@ DEF PROCopen_choices_window(x%,y%)
 REM Copy the information from the configuration settings into the icons in the options window,
 REM before opening the window.
 :
-LOCAL size$
+LOCAL size$, loop%
 :
-PROCset_icon_state(choices_window%,0,FNread_opt_config("Open bubbles"),0,0)
-PROCset_icon_state(choices_window%,1,kill_bubbles%,0,0)
-PROCset_icon_state(choices_window%,2,hide_on_click%,0,0)
-PROCset_icon_state(choices_window%,3,hide_across_drags%,NOT hide_on_click%,0)
-PROCset_icon_state(choices_window%,4,draw_shadow%,0,0)
-PROCset_icon_state(choices_window%,25,show_tool_help%,0,0)
-PROCset_icon_state(choices_window%,26,show_ibar_help%,0,0)
-PROCset_icon_state(choices_window%,39,show_default_help%,0,0)
-PROCset_icon_state(choices_window%,32,font_desktop% AND desktop_font_available%,NOT desktop_font_available%,0)
+PROCset_icon_state(choices_pane%(0),2,FNread_opt_config("Open bubbles"),0,0)
+PROCset_icon_state(choices_pane%(0),3,kill_bubbles%,0,0)
+PROCset_icon_state(choices_pane%(0),4,hide_on_click%,0,0)
+PROCset_icon_state(choices_pane%(0),5,hide_across_drags%,NOThide_on_click%,0)
+PROCset_icon_state(choices_pane%(0),&E,show_tool_help%,0,0)
+PROCset_icon_state(choices_pane%(0),&F,show_ibar_help%,0,0)
+PROCset_icon_state(choices_pane%(0),16,show_default_help%,0,0)
 :
-$FNicon_indirection(choices_window%,6)=LEFT$(STR$(bubble_delay%/100),3)
-$FNicon_indirection(choices_window%,9)=LEFT$(STR$((kill_delay%-bubble_delay%)/100),3)
-$FNicon_indirection(choices_window%,30)=font_name$
+$FNicon_indirection(choices_pane%(0),7)=LEFT$(STR$(bubble_delay%/&64),3)
+$FNicon_indirection(choices_pane%(0),&A)=LEFT$(STR$((kill_delay%-bubble_delay%)/&64),3)
+PROCset_icon_state(choices_pane%(1),0,draw_shadow%,0,0)
+PROCset_icon_state(choices_pane%(1),17,font_desktop%ANDdesktop_font_available%,NOTdesktop_font_available%,0)
+$FNicon_indirection(choices_pane%(1),&F)=font_name$
 size$=STR$(font_size%/16)
 IF INSTR(size$,".")>0 THEN size$=LEFT$(size$,INSTR(size$,".")+1)
-$FNicon_indirection(choices_window%,34)=size$
-$FNicon_indirection(choices_window%,36)=STR$(font_aspect%)
+$FNicon_indirection(choices_pane%(1),19)=size$
+$FNicon_indirection(choices_pane%(1),21)=STR$(font_aspect%)
 :
-PROCset_colour_icon(choices_window%,14,text_colour%)
-PROCset_colour_icon(choices_window%,17,background_colour%)
-PROCset_colour_icon(choices_window%,20,shadow_colour%)
+PROCset_colour_icon(choices_pane%(1),4,text_colour%)
+PROCset_colour_icon(choices_pane%(1),7,background_colour%)
+PROCset_colour_icon(choices_pane%(1),&A,shadow_colour%)
 :
-IF x%>=0 AND y%>=0 THEN PROCopen_window_centred(choices_window%,x%,y%)
+IFx%>=0ANDy%>=0THEN
+ current_choices_pane%=0
+ FORloop%=0TO3
+  PROCset_icon_selected(choices_window%,4+loop%,(loop%=current_choices_pane%))
+ NEXT
+ PROCopen_window_centred(choices_window%,x%,y%)
+ !b%=choices_window%
+ SYS&400CB,,b%
+ !q%=choices_pane%(current_choices_pane%)
+ SYS&400CB,,q%
+ b%!&64=!b%
+ b%!&68=3
+ SYS&400CE,,b%+&64
+ q%!4=b%!4+b%!&6C+8
+ q%!8=b%!16+b%!&70+8
+ q%!&C=b%!4+b%!&74-8
+ IFcurrent_choices_pane%=2THENq%!&C-=40
+ q%!16=b%!16+b%!&78-8
+ q%!28=b%!28
+ SYS&400C5,,q%
+ b%!28=!q%
+ SYS&400C5,,b%
+ENDIF
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEFPROCopen_choices_pane(V%)
+
+!q%=choices_pane%(current_choices_pane%)
+SYS&400CB,,q%
+V%!&64=!b%
+V%!&68=3
+SYS&400CE,,b%+&64
+q%!4=V%!4+V%!&6C+8
+q%!8=V%!16+V%!&70+8
+q%!&C=V%!4+V%!&74-8
+IFcurrent_choices_pane%=2THENq%!&C-=40
+q%!16=V%!16+V%!&78-8
+q%!28=V%!28
+SYS&400C5,,q%
+V%!28=!q%
 ENDPROC
 :
 :
@@ -1084,32 +1157,30 @@ LOCAL old_open_state%,change_open_state%,change_font%
 old_open_state%=display_bubbles%
 change_open_state%=(FNread_opt_config("Open bubbles")<>FNicon_selected(choices_window%,0))
 :
-PROCset_opt_config("Open bubbles",FNicon_selected(choices_window%,0))
-PROCset_opt_config("Close bubbles",FNicon_selected(choices_window%,1))
-PROCset_opt_config("Hide on clicks",FNicon_selected(choices_window%,2))
-PROCset_opt_config("Hide over drags",FNicon_selected(choices_window%,3))
-PROCset_opt_config("Draw shadows",FNicon_selected(choices_window%,4))
-PROCset_opt_config("Show tool help",FNicon_selected(choices_window%,25))
-PROCset_opt_config("Show bar help",FNicon_selected(choices_window%,26))
-PROCset_opt_config("Identify silent apps",FNicon_selected(choices_window%,39))
+PROCset_opt_config("Open bubbles",FNicon_selected(choices_pane%(0),2))
+PROCset_opt_config("Close bubbles",FNicon_selected(choices_pane%(0),3))
+PROCset_opt_config("Hide on clicks",FNicon_selected(choices_pane%(0),4))
+PROCset_opt_config("Hide over drags",FNicon_selected(choices_pane%(0),5))
+PROCset_opt_config("Show tool help",FNicon_selected(choices_pane%(0),&E))
+PROCset_opt_config("Show bar help",FNicon_selected(choices_pane%(0),&F))
+PROCset_opt_config("Identify silent apps",FNicon_selected(choices_pane%(0),16))
+PROCset_num_config("Open delay",VAL($FNicon_indirection(choices_pane%(0),7)))
+PROCset_num_config("Close delay",VAL($FNicon_indirection(choices_pane%(0),&A)))
+PROCset_opt_config("Draw shadows",FNicon_selected(choices_pane%(1),0))
+PROCset_str_config("Font name",FNctrl_string(FNicon_indirection(choices_pane%(1),&F)))
+PROCset_num_config("Font size",VAL($FNicon_indirection(choices_pane%(1),19)))
+PROCset_num_config("Font aspect",VAL($FNicon_indirection(choices_pane%(1),21)))
+IFdesktop_font_available%THENPROCset_opt_config("Font use desktop",FNicon_selected(choices_pane%(1),17))
 :
-PROCset_num_config("Open delay",VAL($FNicon_indirection(choices_window%,6)))
-PROCset_num_config("Close delay",VAL($FNicon_indirection(choices_window%,9)))
-:
-PROCset_str_config("Font name",FNctrl_string(FNicon_indirection(choices_window%,30)))
-PROCset_num_config("Font size",VAL($FNicon_indirection(choices_window%,34)))
-PROCset_num_config("Font aspect",VAL($FNicon_indirection(choices_window%,36)))
-IF desktop_font_available% THEN PROCset_opt_config("Font use desktop",FNicon_selected(choices_window%,32))
-:
-PROCset_num_config("Foreground colour",FNget_icon_background_colour(choices_window%,14))
-PROCset_num_config("Background colour",FNget_icon_background_colour(choices_window%,17))
-PROCset_num_config("Shadow colour",FNget_icon_background_colour(choices_window%,20))
+PROCset_num_config("Foreground colour",FNget_icon_background_colour(choices_pane%(1),4))
+PROCset_num_config("Background colour",FNget_icon_background_colour(choices_pane%(1),7))
+PROCset_num_config("Shadow colour",FNget_icon_background_colour(choices_pane%(1),10))
 :
 PROCsync_options
 PROClose_font
 PROCfind_font
 IF change_open_state% THEN PROCset_help_state(display_bubbles%) ELSE PROCset_help_state(old_open_state%)
-IF close% THEN PROCclose_window(choices_window%)
+IF close% THEN PROCclose_window(choices_window%) : PROCclose_window(choices_pane%(current_choices_pane%))
 :
 IF save% THEN
  IF choices_save$="" THEN
