@@ -964,7 +964,7 @@ IF actual_lines% THEN
  bubble_height%=os_height%
  bubble_lines%=actual_lines%
  :
- IF bubble_open% THEN PROCforce_window_redraw(bubble_window%) ELSE
+ IF bubble_open% THEN PROCforce_window_redraw(bubble_window%)
  bubble_open%=TRUE
 ENDIF
 ENDPROC
