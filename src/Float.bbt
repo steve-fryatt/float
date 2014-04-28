@@ -317,7 +317,7 @@ DEF PROCinitialise
 :
 REM Initialise the program, including the WIMP.
 :
-LOCAL font_width%,os_version%,token_file$,file%,var%,len%,resources_path$
+LOCAL os_version%,token_file$,file%,var%,len%,resources_path$
 :
 REM Set up the global data blocks and the parameters needed for WIMP registration.
 :
@@ -964,7 +964,7 @@ IF actual_lines% THEN
  bubble_height%=os_height%
  bubble_lines%=actual_lines%
  :
- IF bubble_open% THEN PROCforce_window_redraw(bubble_window%)
+ IF bubble_open% THEN PROCforce_window_redraw(bubble_window%)	
  bubble_open%=TRUE
 ENDIF
 ENDPROC
@@ -1152,7 +1152,7 @@ DEF PROCclose_options_window(close%,save%)
 REM Store the contents of the options window into the configuration structure and re-sync the
 REM variables used by the program. Close the window and/or save the new options.
 :
-LOCAL old_open_state%,change_open_state%,change_font%
+LOCAL old_open_state%,change_open_state%
 :
 old_open_state%=display_bubbles%
 change_open_state%=(FNread_opt_config("Open bubbles")<>FNicon_selected(choices_window%,0))
