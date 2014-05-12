@@ -15,7 +15,7 @@ Version $$version$$ ($$date$$) 
 #Below
 #Line
 #Align Centre
-{f/:Float} is {f*:Freeware}: please read the <License>
+{f/:Float} is {f*:Open Source}: please read the <License>
 
 #Indent 2
 #Table Columns 4
