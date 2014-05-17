@@ -1089,28 +1089,16 @@ PROCset_colour_icon(choices_pane%(1),4,text_colour%)
 PROCset_colour_icon(choices_pane%(1),7,background_colour%)
 PROCset_colour_icon(choices_pane%(1),&A,shadow_colour%)
 :
-IFx%>=0ANDy%>=0THEN
+IF x%>=0 AND y%>=0 THEN
  current_choices_pane%=0
- FORloop%=0TO3
+ FOR loop%=0 TO 3
   PROCset_icon_selected(choices_window%,4+loop%,(loop%=current_choices_pane%))
- NEXT
+ NEXT loop%
  PROCopen_window_centred(choices_window%,x%,y%)
  !b%=choices_window%
- SYS&400CB,,b%
- !q%=choices_pane%(current_choices_pane%)
- SYS&400CB,,q%
- b%!&64=!b%
- b%!&68=3
- SYS&400CE,,b%+&64
- q%!4=b%!4+b%!&6C+8
- q%!8=b%!16+b%!&70+8
- q%!&C=b%!4+b%!&74-8
- IFcurrent_choices_pane%=2THENq%!&C-=40
- q%!16=b%!16+b%!&78-8
- q%!28=b%!28
- SYS&400C5,,q%
- b%!28=!q%
- SYS&400C5,,b%
+ SYS "Wimp_GetWindowState",,b%
+ PROCopen_choices_pane(b%)
+  SYS "Wimp_OpenWindow",,b%
 ENDIF
 ENDPROC
 :
@@ -1122,21 +1110,24 @@ REM ----------------------------------------------------------------------------
 :
 :
 :
-DEF PROCopen_choices_pane(V%)
-
+DEF PROCopen_choices_pane(poll_block%)
+:
+REM Open the Choices pane in the correct position, relative to the choices
+REM dialogue.
+:
 !q%=choices_pane%(current_choices_pane%)
-SYS&400CB,,q%
-V%!&64=!b%
-V%!&68=3
-SYS&400CE,,b%+&64
-q%!4=V%!4+V%!&6C+8
-q%!8=V%!16+V%!&70+8
-q%!&C=V%!4+V%!&74-8
-IFcurrent_choices_pane%=2THENq%!&C-=40
-q%!16=V%!16+V%!&78-8
-q%!28=V%!28
-SYS&400C5,,q%
-V%!28=!q%
+SYS "Wimp_GetWindowState",,q%
+poll_block%!100=!poll_block%
+poll_block%!104=3
+SYS "Wimp_GetIconState",,poll_block%+100
+q%!4=poll_block%!4+poll_block%!108+8
+q%!8=poll_block%!16+poll_block%!112+8
+q%!12=poll_block%!4+poll_block%!116-8
+IF current_choices_pane%=2 THEN q%!12-=40
+q%!16=poll_block%!16+poll_block%!120-8
+q%!28=poll_block%!28
+SYS "Wimp_OpenWindow",,q%
+poll_block%!28=!q%
 ENDPROC
 :
 :
