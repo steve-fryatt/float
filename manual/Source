@@ -463,6 +463,7 @@ The following is a list of ideas that will hopefully be added to future versions
 <list>
 <li>Added <icon>Website</icon> button to <window>Program Info</window> window.
 <li>Changed error system to use Locate 1&rsquo;s WimpError library.
+<li>Added <menu>Help</menu> entry to iconbar menu.
 </list>
 
 </chapter>
