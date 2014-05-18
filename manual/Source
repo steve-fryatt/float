@@ -460,6 +460,8 @@ The following is a list of ideas that will hopefully be added to future versions
 
 <subhead title="Test Build">
 
+Development release for testing and feedback.
+
 <list>
 <li>Added <icon>Website</icon> button to <window>Program Info</window> window.
 <li>Changed error system to use Locate 1&rsquo;s WimpError library.
