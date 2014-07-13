@@ -1,0 +1,192 @@
+REM >!Float-Ignore
+REM
+REM Copyright 1999-2014, Stephen Fryatt (info@stevefryatt.org.uk)
+REM
+REM This file is part of Float:
+REM
+REM   http://www.stevefryatt.org.uk/software/
+REM
+REM Licensed under the EUPL, Version 1.1 only (the "Licence");
+REM You may not use this work except in compliance with the
+REM Licence.
+REM
+REM You may obtain a copy of the Licence at:
+REM
+REM   http://joinup.ec.europa.eu/software/page/eupl
+REM
+REM Unless required by applicable law or agreed to in
+REM writing, software distributed under the Licence is
+REM distributed on an "AS IS" basis, WITHOUT WARRANTIES
+REM OR CONDITIONS OF ANY KIND, either express or implied.
+REM
+REM See the Licence for the specific language governing
+REM permissions and limitations under the Licence.
+:
+:
+:
+:
+REM ====================================================================================================================
+REM Task ignore list management
+REM ====================================================================================================================
+:
+:
+:
+REM Initialise the Ignore List, reading in the list of tasks which are to have
+REM their help messages ignored from the configuration and looking up the task
+REM handles for any which are currently running.
+REM
+REM \param task_handle%		The handle of the parent Float task.
+REM \param task_name$		The name of the parent Float task.
+:
+DEF PROCignore_initialise(task_handle%, task_name$)
+
+LOCAL list$, next_task%, found%
+
+REM We can deal with this many tasks to ignore.
+
+IgnoreTaskListSize%=255
+DIM IgnoreTaskNames$(IgnoreTaskListSize%), IgnoreTaskHandles%(IgnoreTaskListSize%)
+
+REM Oepn the file and take it one line at a time.
+
+list$ = FNread_str_config("Ignore tasks") + ","
+
+IgnoreTasks% = 0
+
+WHILE IgnoreTasks% <= IgnoreTaskListSize% AND LEN(list$) > 1
+	REM Get the next task name.
+
+	IgnoreTaskNames$(IgnoreTasks%) = FNstrip_surrounding_whitespace(LEFT$(list$, INSTR(list$, ",") - 1))
+	list$ = MID$(list$, INSTR(list$, ",") + 1)
+
+	REM Look up the task in the list from the Task Manager and, if it is running, record its handle
+	REM for furture reference.  This task is made a special case since we haven't yet called
+	REM Wimp_Poll and so the task manager won't know about us yet.
+
+	IF FNto_upper(IgnoreTaskNames$(IgnoreTasks%)) = FNto_upper(task_name$) THEN
+		IgnoreTaskHandles%(IgnoreTasks%) = task_handle%
+	ELSE
+		next_task% = 0
+		found% = FALSE
+
+		REPEAT
+			SYS "TaskManager_EnumerateTasks", next_task%, b%, 16 TO next_task%
+			IF FNto_upper(FNctrl_string(b%!4)) = FNto_upper(IgnoreTaskNames$(IgnoreTasks%)) THEN
+				IgnoreTaskHandles%(IgnoreTasks%) = !b%
+				found% = TRUE
+			ENDIF
+		UNTIL next_task% < 0 OR found%
+	ENDIF
+
+	IgnoreTasks% += 1
+ENDWHILE
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+REM Process the starting of a new task, by checking it against the list of
+REM configured tasks to see if it's one to be ignored and and recording its
+REM task handle if it is found.
+REM
+REM \param task_handle%		The handle of the new task.
+REM \param task_name$		The name of the new task.
+:
+DEF PROCignore_task_starting(task_handle%, task_name$)
+
+LOCAL loop%, found%, handle_space%
+
+REM Loop through the list of task names to see if one matches the name sent.
+
+loop% = 0
+found% = FALSE
+
+WHILE loop% <= IgnoreTaskListSize% AND loop% < IgnoreTasks% AND NOT found%
+	IF FNto_upper(IgnoreTaskNames$(loop%)) = FNto_upper(task_name$) THEN
+		REM One has matched, so flag this and start looking for a space in the task handle array.
+
+		found% = TRUE
+		handle_space% = -1
+
+		REM Count up through the array until an empty space is found or the end is reached.
+
+		FOR loop%=0 TO IgnoreTasks% - 1
+			IF IgnoreTaskHandles%(loop%) = 0 AND handle_space% = -1 THEN handle_space% = loop%
+		NEXT loop%
+
+		REM Store the handle, either in the first space or at the end of the array.
+
+		IF handle_space% = -1 THEN handle_space% = IgnoreTasks% : IgnoreTasks% += 1
+		IgnoreTaskHandles%(handle_space%) = b%!4
+	ENDIF
+
+	loop% += 1
+ENDWHILE
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+REM Process the quitting of a task, removing it from the list of task handles
+REM and shrinking the list if possible.
+REM
+REM \param task_handle%		The handle of the task which has quit.
+:
+DEF PROCignore_task_quitting(task_handle%)
+
+LOCAL loop%, zero%
+
+REM Scan backwards through the list of task handles.  When a matching handle is found, zero it.
+REM While all the handles have been zero, continue to reduce the count of the handles contained in
+REM the list.
+
+zero% = TRUE
+
+IF IgnoreTasks% = 0 THEN ENDPROC
+
+FOR loop% = IgnoreTasks% - 1 TO 0 STEP -1
+	IF IgnoreTaskHandles%(loop%) = task_handle% THEN IgnoreTaskHandles%(loop%) = 0
+	IF IgnoreTaskHandles%(loop%) <> 0 THEN zero% = FALSE
+	IF zero% THEN IgnoreTasks% = loop%
+NEXT loop%
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+REM Check the list of running tasks, returning TRUE if the task handle is
+REM included in the list of tasks to be ignored.
+REM
+REM \param task_handle%		The task handle to check.
+REM \return			TRUE if the task is to be ignored; else FALSE.
+:
+DEF FNignore_task(task_handle%)
+
+LOCAL loop%, ignore%
+
+REM If there are no tasks in the list, the task can't be ignored!
+
+IF IgnoreTasks% = 0 THEN =FALSE
+
+REM Scan the list of task handles to see if one matches; set the ignore flag is so.
+
+ignore% = FALSE
+
+FOR loop% = 0 TO IgnoreTasks% - 1
+	IF IgnoreTaskHandles%(loop%) = task_handle% THEN ignore% = TRUE
+NEXT loop%
+
+=ignore%
+

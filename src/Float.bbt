@@ -31,6 +31,8 @@ LIBRARY "BASIC:Resources"
 LIBRARY "BASIC:String"
 LIBRARY "BASIC:Url"
 :
+LIBRARY "src/Ignore.bbt"
+:
 REM These values get replaced by tokenize.
 :
 build_version$ = "1.10"
@@ -277,8 +279,8 @@ CASE b%!16 OF
  WHEN &503   : IF (NOT FNignore_task(b%!4)) OR show_all_help% THEN PROCexpand_text(b%+20)
  WHEN &504   : PROCmessage_help_enable
  WHEN &400C1 : PROCnew_mode
- WHEN &400C2 : PROCtask_starting
- WHEN &400C3 : PROCtask_quitting
+ WHEN &400C2 : PROCignore_task_starting(b%!4, FNctrl_string(b%+28))
+ WHEN &400C3 : PROCignore_task_quitting(b%!4)
  WHEN &400C9 : IF b%!20=font_menu% THEN PROCdelete_font_menu
  WHEN &400CF : PROClose_font : PROCfind_font
  WHEN &4E383 : PROCurl_bounce(b%)
@@ -317,7 +319,7 @@ DEF PROCinitialise
 :
 REM Initialise the program, including the WIMP.
 :
-LOCAL os_version%,token_file$,file%,var%,len%,resources_path$
+LOCAL os_version%,token_file$,file%,var%,len%,resources_path$,task_name$
 :
 REM Set up the global data blocks and the parameters needed for WIMP registration.
 :
@@ -360,7 +362,7 @@ q%!40=0      : REM Message_Quit
 :
 REM Register as a WIMP task.
 :
-SYS "Wimp_Initialise",wimp_needed%,TASK,task_name$,q% TO wimp_version%,task_handle%
+SYS "Wimp_Initialise",wimp_needed%,TASK,task_name$,q% TO wimp_version%,TaskHandle%
 :
 REM Set the quit flag to false so we don't quit immediately.  Get the current time ready for
 REM calling Wimp_PollIdle - this will cause the first null poll to be returned immediately.
@@ -502,7 +504,7 @@ PROCsync_options
 :
 REM Set up the list of tasks to ignore.
 :
-PROCinitialise_ignore_list
+PROCignore_initialise(TaskHandle%, task_name$)
 :
 REM Find the font we need to display the text and get the size of the screen mode.
 :
@@ -547,7 +549,7 @@ PROCun_link_event_v
 PROClose_font
 SYS "MessageTrans_CloseFile",messages%
 SYS "MessageTrans_CloseFile",tokens%
-SYS "Wimp_CloseDown",task_handle%,TASK
+SYS "Wimp_CloseDown",TaskHandle%,TASK
 ENDPROC
 :
 :
@@ -676,7 +678,7 @@ REM Token HelpH2 is used for icon-bar icons, HelpH3 is used for windows.
 :
 LOCAL task_name%,token$,flags%
 :
-IF helped_task_handle%<>task_handle% THEN
+IF helped_task_handle%<>TaskHandle% THEN
  IF icon_bar% THEN token$="2" ELSE token$="3"
  :
  SYS "XTaskManager_TaskNameFromHandle",helped_task_handle% TO task_name% ;flags%
@@ -1258,171 +1260,15 @@ WHILE more%
  x%=b%!4-b%!20
  y%=b%!16-b%!24-4
  :
- IF ignore_tasks% > 0 THEN
-  FOR line% = 1 TO ignore_tasks%
-   SYS "Wimp_TextOp",2,ignore_tasks$(line% - 1),-1,-1,x%,y%-(line%<<5)
+ IF IgnoreTasks% > 0 THEN
+  FOR line% = 1 TO IgnoreTasks%
+   SYS "Wimp_TextOp",2,IgnoreTaskNames$(line% - 1),-1,-1,x%,y%-(line%<<5)
   NEXT line%
  ENDIF
  :
  SYS "Wimp_GetRectangle",,b% TO more%
 ENDWHILE
 ENDPROC
-:
-:
-:
-:
-REM ====================================================================================================================
-REM Task ignore list management
-REM ====================================================================================================================
-:
-:
-:
-:
-DEF PROCinitialise_ignore_list
-:
-REM Load the list of applications that are to have their help messages ignored and congigure the
-REM list of taskhandles.
-:
-LOCAL list$, next_task%, found%
-:
-REM We can deal with this many tasks to ignore.
-:
-task_list_size%=255
-DIM ignore_tasks$(task_list_size%), ignore_task_handles%(task_list_size%)
-:
-REM Oepn the file and take it one line at a time.
-:
-list$=FNread_str_config("Ignore tasks")+","
-:
-ignore_tasks%=0
-:
-WHILE ignore_tasks%<=task_list_size% AND LEN(list$)>1
- :
- REM Get the next task name.
- :
- ignore_tasks$(ignore_tasks%)=FNstrip_surrounding_whitespace(LEFT$(list$,INSTR(list$,",")-1))
- list$=MID$(list$,INSTR(list$,",")+1)
- :
- REM Look up the task in the list from the Task Manager and, if it is running, record its handle
- REM for furture reference.  This task is made a special case since we haven't yet called
- REM Wimp_Poll and so the task manager won't know about us yet.
- :
- IF FNto_upper(ignore_tasks$(ignore_tasks%))=FNto_upper(task_name$) THEN
-  ignore_task_handles%(ignore_tasks%)=task_handle%
- ELSE
-  next_task%=0
-  found%=FALSE
-  :
-  REPEAT
-   SYS "TaskManager_EnumerateTasks",next_task%,b%,16 TO next_task%
-   IF FNto_upper(FNctrl_string(b%!4)) = FNto_upper(ignore_tasks$(ignore_tasks%)) THEN
-    ignore_task_handles%(ignore_tasks%)=!b%
-    found%=TRUE
-   ENDIF
-  UNTIL next_task%<0 OR found%
- ENDIF
- :
- ignore_tasks%+=1
-ENDWHILE
-ENDPROC
-:
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
-:
-DEF PROCtask_starting
-:
-REM A new task has just started, so see if it's one to ignore and add its task handle to the list
-REM if necessary.
-:
-LOCAL loop%, found%, handle_space%
-:
-REM Loop through the list of task names to see if one matches the name sent.
-:
-loop%=0
-found%=FALSE
-:
-WHILE loop%<=task_list_size% AND loop%<ignore_tasks% AND NOT found%
- IF FNto_upper(ignore_tasks$(loop%))=FNto_upper(FNctrl_string(b%+28)) THEN
-  :
-  REM One has matched, so flag this and start looking for a space in the task handle array.
-  :
-  found%=TRUE
-  handle_space%=-1
-  :
-  REM Count up through the array until an empty space is found or the end is reached.
-  :
-  FOR loop%=0 TO ignore_tasks%-1
-   IF ignore_task_handles%(loop%)=0 AND handle_space%=-1 THEN handle_space%=loop%
-  NEXT loop%
-  :
-  REM Store the handle, either in the first space or at the end of the array.
-  :
-  IF handle_space%=-1 THEN handle_space%=ignore_tasks% : ignore_tasks%+=1
-  ignore_task_handles%(handle_space%)=b%!4
- ENDIF
- loop%+=1
-ENDWHILE
-ENDPROC
-:
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
-:
-DEF PROCtask_quitting
-:
-REM A task has quit, so remove its task handle from the list and shrink the list if possible.
-:
-LOCAL loop%, zero%
-:
-REM Scan backwards through the list of task handles.  When a matching handle is found, zero it.
-REM While all the handles have been zero, continue to reduce the count of the handles contained in
-REM the list.
-:
-zero%=TRUE
-:
-IF ignore_tasks%>0 THEN
- FOR loop%=ignore_tasks%-1 TO 0 STEP -1
-  IF ignore_task_handles%(loop%)=b%!4 THEN ignore_task_handles%(loop%)=0
-  IF ignore_task_handles%(loop%)<>0 THEN zero%=FALSE
-  IF zero% THEN ignore_tasks%=loop%
- NEXT loop%
-ENDIF
-ENDPROC
-:
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
-:
-DEF FNignore_task(task_handle%)
-:
-REM Return TRUE if the task handle given is in the list of handles to ignore help requests from.
-:
-LOCAL loop%,ignore%
-:
-REM Scan the list of task handles to see if one matches; set the ignore flag is so.
-:
-ignore%=FALSE
-:
-IF ignore_tasks%>0 THEN
- FOR loop%=0 TO ignore_tasks%-1
-  IF ignore_task_handles%(loop%)=task_handle% THEN ignore%=TRUE
- NEXT loop%
-ENDIF
-:
-=ignore%
 :
 :
 :
