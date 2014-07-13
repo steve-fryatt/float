@@ -72,7 +72,7 @@ next_poll%+=poll_delay%
 :
 CASE reason% OF
  WHEN 0     : PROCidle_event
- WHEN 1     : PROCredraw_bubble
+ WHEN 1     : IF !b% = choices_pane%(2) THEN PROCredraw_ignore_list ELSE PROCredraw_bubble
  WHEN 2     : IF !b%=choices_window% THEN PROCopen_choices_pane(b%)
               SYS "Wimp_OpenWindow",,b%
               IF!b%=choices_window% THEN PROCopen_choices_pane(b%)
@@ -1226,6 +1226,46 @@ poll_delay%=FNread_int_config("Poll delay")
 text_colour%=FNread_int_config("Foreground colour")
 background_colour%=FNread_int_config("Background colour")
 shadow_colour%=FNread_int_config("Shadow colour")
+ENDPROC
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROCredraw_ignore_list
+:
+REM Redraw the ignore list pane in the Choices window.
+:
+LOCAL x%,y%,more%,line%
+:
+REM Set the font colours
+:
+SYS "Wimp_TextOp",0,7,1
+:
+REM Go into the WIMP redraw loop.
+:
+SYS "Wimp_RedrawWindow",,b% TO more%
+:
+WHILE more%
+ :
+ REM Calculate the position of the top left of the bubble window, converting this to millipoints
+ REM and pointing to the bottom of the first line of text (fonts are painted from the baseline)
+ :
+ x%=b%!4-b%!20
+ y%=b%!16-b%!24-4
+ :
+ IF ignore_tasks% > 0 THEN
+  FOR line% = 1 TO ignore_tasks%
+   SYS "Wimp_TextOp",2,ignore_tasks$(line% - 1),-1,-1,x%,y%-(line%<<5)
+  NEXT line%
+ ENDIF
+ :
+ SYS "Wimp_GetRectangle",,b% TO more%
+ENDWHILE
 ENDPROC
 :
 :
