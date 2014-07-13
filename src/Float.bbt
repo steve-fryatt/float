@@ -32,6 +32,7 @@ LIBRARY "BASIC:String"
 LIBRARY "BASIC:Url"
 :
 LIBRARY "src/Ignore.bbt"
+LIBRARY "src/Mem.bbt"
 :
 REM These values get replaced by tokenize.
 :
@@ -530,7 +531,7 @@ SYS "Wimp_CreateIcon",,q% TO bar_icon_handle%
 :
 PROClink_to_event_v
 :
-SYS "Wimp_SlotSize",-1,-1 TO base_slot_size%
+PROCmem_initialise
 ENDPROC
 :
 :
@@ -1515,14 +1516,14 @@ REM ============================================================================
 :
 DEF FNbuild_font_menu
 :
-LOCAL menu_buf%,ind_buf%,menu_buf_size%,ind_buf_size%,new_slot_size%,fonts_message_file$,mess_buf%,menu_title%
+LOCAL menu_buf%,ind_buf%,menu_buf_size%,ind_buf_size%,fonts_message_file$,mess_buf%,menu_title%
 :
 SYS "Font_ListFonts",,0,(1<<19),,0,,0 TO ,,,menu_buf_size%,,ind_buf_size%
 
-SYS "Wimp_SlotSize",base_slot_size%+menu_buf_size%+ind_buf_size%,-1 TO new_slot_size%
-IF new_slot_size%>=base_slot_size%+menu_buf_size%+ind_buf_size% THEN
- menu_buf%=HIMEM
- ind_buf%=HIMEM+menu_buf_size%
+menu_buf% = FNmem_claim(menu_buf_size% + ind_buf_size%)
+
+IF menu_buf% <> 0 THEN
+ ind_buf% = menu_buf% + menu_buf_size%
  SYS "Font_ListFonts",,menu_buf%,&280000,menu_buf_size%,ind_buf%,ind_buf_size%,$FNicon_indirection(choices_window%,30)
  :
  IF font_manager_version%<=307 THEN
@@ -1554,7 +1555,7 @@ REM ----------------------------------------------------------------------------
 :
 :
 DEF PROCdelete_font_menu
-SYS "Wimp_SlotSize",base_slot_size%,-1
+PROCmem_release
 ENDPROC
 :
 :
