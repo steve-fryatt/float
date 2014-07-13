@@ -114,7 +114,7 @@ WHILE loop% <= IgnoreTaskListSize% AND loop% < IgnoreTasks% AND NOT found%
 
 		REM Count up through the array until an empty space is found or the end is reached.
 
-		FOR loop%=0 TO IgnoreTasks% - 1
+		FOR loop% = 0 TO IgnoreTasks% - 1
 			IF IgnoreTaskHandles%(loop%) = 0 AND handle_space% = -1 THEN handle_space% = loop%
 		NEXT loop%
 
