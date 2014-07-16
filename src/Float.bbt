@@ -371,6 +371,10 @@ REM calling Wimp_PollIdle - this will cause the first null poll to be returned i
 quit%=FALSE
 SYS "OS_ReadMonotonicTime" TO next_poll%
 :
+REM Initialise the WimpSlot
+:
+PROCmem_initialise
+:
 REM Load the correct set of message tokens for the version of RISC OS we are running on at the
 REM moment.
 :
@@ -530,8 +534,6 @@ q%!32=10
 SYS "Wimp_CreateIcon",,q% TO bar_icon_handle%
 :
 PROClink_to_event_v
-:
-PROCmem_initialise
 ENDPROC
 :
 :

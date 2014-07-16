@@ -109,7 +109,7 @@ READMEHDR := Header
 MENUSRC := menudef
 FINDHELPSRC := Help.bbt
 
-SRCS := Float.bbt
+SRCS := Float.bbt Ignore.bbt Mem.bbt
 
 # Build everything, but don't package it for release.
 

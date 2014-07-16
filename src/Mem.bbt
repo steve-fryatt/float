@@ -23,16 +23,78 @@ REM See the Licence for the specific language governing
 REM permissions and limitations under the Licence.
 
 REM Wimpslot Memory Allocation
-
+REM
+REM Two interfaces are provided: a "stack" from which functions and procedures
+REM can claim transient memory which must be returned on exit, and a shared
+REM block which can be claimed as required if currently unused.
 
 REM Initialise the WimpSlot memory allocation routines.
 :
 DEF PROCmem_initialise
+LOCAL new_slot_size%
+
+MemStackSize% = 1024
+MemStackPtr% = 0
+MemSharedInUse% = FALSE
+
+REM Get the current WimpSlot size, then expand it to give space for the stack.
+
 SYS "Wimp_SlotSize", -1, -1 TO MemBaseSlotSize%
+SYS "Wimp_SlotSize", MemBaseSlotSize% + MemStackSize%, -1 TO new_slot_size%
+
+REM \TODO -- We should probably error if less memory than expected was claimed.
+
+REM Make the stack fill the actual new slot size.
+
+MemStackSize% = new_slot_size% - MemBaseSlotSize%
+MemBaseSlotSize% = new_slot_size%
 ENDPROC
 
 
-REM Claim a block of memory from the WimpSlot.
+
+
+REM Claim a block of memory from the "stack". Blocks will be word-aligned
+REM and rounded up to a word boundary.
+REM
+REM \param size%		The number of bytes required.
+REM \return			The address of the allocated block, or 0 on failure.
+:
+DEF FNmem_stack(size%)
+LOCAL block%
+
+REM Round up to a word boundary, to ensure that all blocks are word-aligned.
+
+size% = (size% + 3) AND &FFFFFFFC
+
+REM Return 0 if there's not enough space.
+
+IF MemStackPtr% + size% > MemStackSize% THEN =0
+
+REM Find the block's address and shift the used block pointer.
+
+block% = HIMEM + MemStackPtr%
+MemStackPtr% += size%
+=block%
+
+
+
+
+REM Free a block of memory (plus any subsequent blocks) back into the "stack".
+REM
+REM \param block%		The address of the block to be released.
+:
+DEF PROCmem_free(block%)
+
+IF (block% < HIMEM) OR (block% > HIMEM + MemStackPtr%) ENDPROC
+
+MemStackPtr% = block% - HIMEM
+ENDPROC
+
+
+
+
+REM Claim the block of shared memory from the WimpSlot. If the memory is
+REM currently in use by another claimant, the call will fail.
 REM
 REM \param size%		The number of bytes of memory required.
 REM \return			Pointer to the block of memory, or 0 on failure.
@@ -40,14 +102,20 @@ REM \return			Pointer to the block of memory, or 0 on failure.
 DEF FNmem_claim(size%)
 LOCAL new_slot_size%
 
+IF MemSharedInUse% THEN =0
+MemSharedInUse% = TRUE
+
 SYS "Wimp_SlotSize", MemBaseSlotSize% + size%, -1 TO new_slot_size%
 IF new_slot_size% < MemBaseSlotSize% + size% THEN =0
-=HIMEM
+=HIMEM + MemStackSize%
 
 
-REM Release a block of memory from the WimpSlot.
+
+
+REM Release the block of memory from the WimpSlot.
 :
 DEF PROCmem_release
 SYS "Wimp_SlotSize", MemBaseSlotSize%, -1
+MemSharedInUse% = FALSE
 ENDPROC
 
