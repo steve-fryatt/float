@@ -33,7 +33,7 @@ REM Initialise the WimpSlot memory allocation routines.
 DEF PROCmem_initialise
 LOCAL new_slot_size%
 
-MemStackSize% = 1024
+MemStackSize% = 1024		: REM The required "stack" size, in bytes.
 MemStackPtr% = 0
 MemSharedInUse% = FALSE
 
