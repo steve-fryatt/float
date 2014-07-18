@@ -23,14 +23,14 @@ REM See the Licence for the specific language governing
 REM permissions and limitations under the Licence.
 :
 LIBRARY "BASIC:WimpLib"
-LIBRARY "BASIC:WimpSprite"
-LIBRARY "BASIC:WimpError"
 LIBRARY "BASIC:Config"
 LIBRARY "BASIC:Icon"
 LIBRARY "BASIC:Resources"
 LIBRARY "BASIC:String"
-LIBRARY "BASIC:Window"
 LIBRARY "BASIC:Url"
+LIBRARY "BASIC:WimpError"
+LIBRARY "BASIC:WimpSprite"
+LIBRARY "BASIC:Window"
 :
 LIBRARY "src/Ignore.bbt"
 LIBRARY "src/Mem.bbt"
@@ -329,7 +329,7 @@ DIM b% 4000, q% 255, a% 255
 :
 REM Find the correct resources for the current territory.
 :
-resources_path$=FNterritory_resources("Float:Resources")
+resources_path$=FNresources_find_territory_folder("Float:Resources")
 :
 REM Allocate space and load the message file into memory.
 :
@@ -393,7 +393,7 @@ IF file%=0 THEN
 ENDIF
 IF file%=0 THEN
  SYS "OS_Byte",129,0,&FF TO ,os_version%
- token_file$=resources_path$+"Tokens."+FNfind_latest_resources(resources_path$+"Tokens","",os_version%)
+ token_file$=resources_path$+"Tokens."+FNresources_find_latest_object(resources_path$+"Tokens","",os_version%)
  SYS "OS_File",17,token_file$ TO file%
 ENDIF
 IF file%=0 THEN token_file$=resources_path$+"Tokens.164"
