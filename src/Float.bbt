@@ -29,6 +29,7 @@ LIBRARY "BASIC:Config"
 LIBRARY "BASIC:Icon"
 LIBRARY "BASIC:Resources"
 LIBRARY "BASIC:String"
+LIBRARY "BASIC:Window"
 LIBRARY "BASIC:Url"
 :
 LIBRARY "src/Ignore.bbt"
@@ -181,10 +182,10 @@ CASE b%!12 OF
   CASE b%!8 OF
    WHEN 4
     CASE b%!16 OF
-     WHEN 0     : PROCclose_window(choices_window%) : PROCclose_window(choices_pane%(current_choices_pane%))
+     WHEN 0     : PROCwindow_close(choices_window%) : PROCwindow_close(choices_pane%(current_choices_pane%))
      WHEN 1     : PROCclose_options_window(TRUE,TRUE)
      WHEN 2     : PROCclose_options_window(TRUE,FALSE)
-     WHEN 4,5,6 : PROCclose_window(choices_pane%(current_choices_pane%)) : current_choices_pane%=b%!16-4:!b%=choices_window%:SYS&400CB,,b%:PROCopen_choices_pane(b%):SYS&400C5,,b%
+     WHEN 4,5,6 : PROCwindow_close(choices_pane%(current_choices_pane%)) : current_choices_pane%=b%!16-4:!b%=choices_window%:SYS&400CB,,b%:PROCopen_choices_pane(b%):SYS&400C5,,b%
     ENDCASE
    WHEN 1
     CASE b%!16 OF
@@ -193,7 +194,7 @@ CASE b%!12 OF
                   IF!q%=choices_pane%(current_choices_pane%) THEN PROCput_caret_at_end(choices_pane%(current_choices_pane%),q%!4)
      WHEN 1     : PROCclose_options_window(FALSE,TRUE)
      WHEN 2     : PROCclose_options_window(FALSE,FALSE)
-     WHEN 4,5,6 : PROCset_icon_selected(choices_window%,b%!16,TRUE) : PROCclose_window(choices_pane%(current_choices_pane%)):current_choices_pane%=b%!16-4:!b%=choices_window%:SYS&400CB,,b%:PROCopen_choices_pane(b%):SYS&400C5,,b%
+     WHEN 4,5,6 : PROCset_icon_selected(choices_window%,b%!16,TRUE) : PROCwindow_close(choices_pane%(current_choices_pane%)):current_choices_pane%=b%!16-4:!b%=choices_window%:SYS&400CB,,b%:PROCopen_choices_pane(b%):SYS&400C5,,b%
     ENDCASE
   ENDCASE
  WHENchoices_pane%(0)
@@ -213,7 +214,7 @@ CASE b%!12 OF
   ENDCASE
  WHEN colours_window%
   IF b%!16>=1 THEN PROCset_colour_icon(choices_pane%(1),colours_icon%,b%!16-1)
-  PROCclose_window(colours_window%)
+  PROCwindow_close(colours_window%)
   PROCforce_icon_redraw(choices_pane%(1),colours_icon%)
  WHEN prog_info_window%
   IF b%!16=8 THEN PROClaunch_url(FNmessage_lookup("SupportURL")):PROCdisplay_menu(-1,0,0)
@@ -953,7 +954,7 @@ IF actual_lines% THEN
  :
  shadow_size%=draw_shadow%*-8
  :
- IF bubble_open% THEN PROCclose_window(bubble_window%)
+ IF bubble_open% THEN PROCwindow_close(bubble_window%)
  :
  !q%=bubble_window%
  q%!4=x_pos%
@@ -1051,7 +1052,7 @@ REM Close the help bubble.
 REM
 REM Close the backing window so the WIMP redraws the screen, then flag the bubble closed.
 :
-IF bubble_open% THEN PROCclose_window(bubble_window%)
+IF bubble_open% THEN PROCwindow_close(bubble_window%)
 bubble_open%=FALSE
 ENDPROC
 :
@@ -1099,7 +1100,7 @@ IF x%>=0 AND y%>=0 THEN
  FOR loop%=0 TO 3
   PROCset_icon_selected(choices_window%,4+loop%,(loop%=current_choices_pane%))
  NEXT loop%
- PROCopen_window_centred(choices_window%,x%,y%)
+ PROCwindow_open_centred_at(choices_window%,x%,y%)
  !b%=choices_window%
  SYS "Wimp_GetWindowState",,b%
  PROCopen_choices_pane(b%)
@@ -1176,7 +1177,7 @@ PROCsync_options
 PROClose_font
 PROCfind_font
 IF change_open_state% THEN PROCset_help_state(display_bubbles%) ELSE PROCset_help_state(old_open_state%)
-IF close% THEN PROCclose_window(choices_window%) : PROCclose_window(choices_pane%(current_choices_pane%))
+IF close% THEN PROCwindow_close(choices_window%) : PROCwindow_close(choices_pane%(current_choices_pane%))
 :
 IF save% THEN
  IF choices_save$="" THEN
