@@ -189,7 +189,7 @@ CASE b%!12 OF
     ENDCASE
    WHEN 1
     CASE b%!16 OF
-     WHEN 0     : PROCopen_choices_window(-1,-1) : PROCforce_window_redraw(choices_window%)
+     WHEN 0     : PROCopen_choices_window(-1,-1) : PROCwindow_force_redraw(choices_window%)
                   SYS "Wimp_GetCaretPosition",,q%
                   IF!q%=choices_pane%(current_choices_pane%) THEN PROCput_caret_at_end(choices_pane%(current_choices_pane%),q%!4)
      WHEN 1     : PROCclose_options_window(FALSE,TRUE)
@@ -970,7 +970,7 @@ IF actual_lines% THEN
  bubble_height%=os_height%
  bubble_lines%=actual_lines%
  :
- IF bubble_open% THEN PROCforce_window_redraw(bubble_window%)	
+ IF bubble_open% THEN PROCwindow_force_redraw(bubble_window%)	
  bubble_open%=TRUE
 ENDIF
 ENDPROC
