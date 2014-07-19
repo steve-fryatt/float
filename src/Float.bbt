@@ -217,7 +217,7 @@ CASE b%!12 OF
   PROCwindow_close(colours_window%)
   PROCforce_icon_redraw(choices_pane%(1),colours_icon%)
  WHEN prog_info_window%
-  IF b%!16=8 THEN PROClaunch_url(FNmessage_lookup("SupportURL")):PROCdisplay_menu(-1,0,0)
+  IF b%!16=8 THEN PROCurl_launch(FNmessage_lookup("SupportURL")):PROCdisplay_menu(-1,0,0)
 ENDCASE
 ENDPROC
 :
