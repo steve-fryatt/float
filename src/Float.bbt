@@ -40,11 +40,11 @@ REM These values get replaced by tokenize.
 build_version$ = "1.10"
 build_date$ = "01 Jul 2009"
 :
-PROCwimp_error_initialise("Float","!float") : ON ERROR result%=FNwimp_error : END
+PROCwimperror_initialise("Float","!float") : ON ERROR result%=FNwimperror_program : END
 :
 PROCinitialise
 :
-ON ERROR quit%=(FNwimp_error=2)
+ON ERROR quit% = FNwimperror_program
 :
 WHILE NOT quit%
  PROCpoll
@@ -345,7 +345,7 @@ TASK=!b%
 :
 task_name$=FNmessage_lookup("TaskName")
 task_sprite$=FNmessage_lookup("TaskSpr")
-PROCwimp_error_initialise(task_name$,task_sprite$)
+PROCwimperror_initialise(task_name$,task_sprite$)
 wimp_needed%=310
 :
 REM Choose what messages we accept from the WIMP.
