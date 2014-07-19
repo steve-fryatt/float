@@ -435,7 +435,7 @@ $FNicon_indirection(prog_info_window%,6)=build_version$+" ("+build_date$+")"
 :
 REM Load the sprites file into memory.
 :
-sprite_area%=FNload_user_sprite_area("Float:Sprites")
+sprite_area%=FNwimpsprite_load_user_sprites("Float:Sprites")
 :
 REM Load the menu definitions into memory and create the menus.
 :
