@@ -475,34 +475,34 @@ desktop_font_available%=((flags% AND 1)=0)
 :
 REM Set up the default configuration and load any changes
 :
-PROCinitialise_config(20,task_name$)
+PROCconfig_initialise(20,task_name$)
 :
-PROCinit_opt_config("Open bubbles",TRUE)
-PROCinit_opt_config("Close bubbles",TRUE)
-PROCinit_opt_config("Draw shadows",TRUE)
-PROCinit_opt_config("Hide over drags",TRUE)
-PROCinit_opt_config("Hide on clicks",TRUE)
-PROCinit_opt_config("Show tool help", TRUE)
-PROCinit_opt_config("Show bar help", TRUE)
-PROCinit_opt_config("Identify silent apps", FALSE)
-PROCinit_num_config("Open delay",0.6)
-PROCinit_num_config("Close delay",10)
-PROCinit_int_config("Foreground colour",7)
-PROCinit_int_config("Background colour",1)
-PROCinit_int_config("Shadow colour",6)
-PROCinit_str_config("Font name","Homerton.Bold.Oblique")
-PROCinit_num_config("Font size",10)
-PROCinit_num_config("Font aspect",100)
-PROCinit_opt_config("Font use desktop",FALSE)
-PROCinit_int_config("Mouse jitter",8)
-PROCinit_int_config("Poll delay",5)
-PROCinit_str_config("Ignore tasks","")
+PROCconfig_init_boolean("Open bubbles",TRUE)
+PROCconfig_init_boolean("Close bubbles",TRUE)
+PROCconfig_init_boolean("Draw shadows",TRUE)
+PROCconfig_init_boolean("Hide over drags",TRUE)
+PROCconfig_init_boolean("Hide on clicks",TRUE)
+PROCconfig_init_boolean("Show tool help", TRUE)
+PROCconfig_init_boolean("Show bar help", TRUE)
+PROCconfig_init_boolean("Identify silent apps", FALSE)
+PROCconfig_init_real("Open delay",0.6)
+PROCconfig_init_real("Close delay",10)
+PROCconfig_init_integer("Foreground colour",7)
+PROCconfig_init_integer("Background colour",1)
+PROCconfig_init_integer("Shadow colour",6)
+PROCconfig_init_string("Font name","Homerton.Bold.Oblique")
+PROCconfig_init_real("Font size",10)
+PROCconfig_init_real("Font aspect",100)
+PROCconfig_init_boolean("Font use desktop",FALSE)
+PROCconfig_init_integer("Mouse jitter",8)
+PROCconfig_init_integer("Poll delay",5)
+PROCconfig_init_string("Ignore tasks","")
 :
 :
 choices_load$="Choices:Float.Choices"
 SYS "XOS_File",17,choices_load$ TO choices_type% ;flags%
 IF (flags% AND 1)<>0 OR choices_type%<>1 THEN choices_load$="Float:Choices"
-choices_save$=FNload_config_file(choices_load$)
+choices_save$=FNconfig_load_file(choices_load$)
 :
 REM Create all the config variables used in the program.
 :
@@ -1073,7 +1073,7 @@ REM before opening the window.
 :
 LOCAL size$, loop%
 :
-PROCset_icon_state(choices_pane%(0),2,FNread_opt_config("Open bubbles"),0,0)
+PROCset_icon_state(choices_pane%(0),2,PROCconfig_read_boolean("Open bubbles"),0,0)
 PROCset_icon_state(choices_pane%(0),3,kill_bubbles%,0,0)
 PROCset_icon_state(choices_pane%(0),4,hide_on_click%,0,0)
 PROCset_icon_state(choices_pane%(0),5,hide_across_drags%,NOThide_on_click%,0)
@@ -1152,26 +1152,26 @@ REM variables used by the program. Close the window and/or save the new options.
 LOCAL old_open_state%,change_open_state%
 :
 old_open_state%=display_bubbles%
-change_open_state%=(FNread_opt_config("Open bubbles")<>FNicon_selected(choices_window%,0))
+change_open_state%=(PROCconfig_read_boolean("Open bubbles")<>FNicon_selected(choices_window%,0))
 :
-PROCset_opt_config("Open bubbles",FNicon_selected(choices_pane%(0),2))
-PROCset_opt_config("Close bubbles",FNicon_selected(choices_pane%(0),3))
-PROCset_opt_config("Hide on clicks",FNicon_selected(choices_pane%(0),4))
-PROCset_opt_config("Hide over drags",FNicon_selected(choices_pane%(0),5))
-PROCset_opt_config("Show tool help",FNicon_selected(choices_pane%(0),&E))
-PROCset_opt_config("Show bar help",FNicon_selected(choices_pane%(0),&F))
-PROCset_opt_config("Identify silent apps",FNicon_selected(choices_pane%(0),16))
-PROCset_num_config("Open delay",VAL($FNicon_indirection(choices_pane%(0),7)))
-PROCset_num_config("Close delay",VAL($FNicon_indirection(choices_pane%(0),&A)))
-PROCset_opt_config("Draw shadows",FNicon_selected(choices_pane%(1),0))
-PROCset_str_config("Font name",FNctrl_string(FNicon_indirection(choices_pane%(1),&F)))
-PROCset_num_config("Font size",VAL($FNicon_indirection(choices_pane%(1),19)))
-PROCset_num_config("Font aspect",VAL($FNicon_indirection(choices_pane%(1),21)))
-IF desktop_font_available% THEN PROCset_opt_config("Font use desktop",FNicon_selected(choices_pane%(1),17))
+PROCconfig_set_boolean("Open bubbles",FNicon_selected(choices_pane%(0),2))
+PROCconfig_set_boolean("Close bubbles",FNicon_selected(choices_pane%(0),3))
+PROCconfig_set_boolean("Hide on clicks",FNicon_selected(choices_pane%(0),4))
+PROCconfig_set_boolean("Hide over drags",FNicon_selected(choices_pane%(0),5))
+PROCconfig_set_boolean("Show tool help",FNicon_selected(choices_pane%(0),&E))
+PROCconfig_set_boolean("Show bar help",FNicon_selected(choices_pane%(0),&F))
+PROCconfig_set_boolean("Identify silent apps",FNicon_selected(choices_pane%(0),16))
+PROCconfig_set_real("Open delay",VAL($FNicon_indirection(choices_pane%(0),7)))
+PROCconfig_set_real("Close delay",VAL($FNicon_indirection(choices_pane%(0),&A)))
+PROCconfig_set_boolean("Draw shadows",FNicon_selected(choices_pane%(1),0))
+PROCconfig_set_string("Font name",FNctrl_string(FNicon_indirection(choices_pane%(1),&F)))
+PROCconfig_set_real("Font size",VAL($FNicon_indirection(choices_pane%(1),19)))
+PROCconfig_set_real("Font aspect",VAL($FNicon_indirection(choices_pane%(1),21)))
+IF desktop_font_available% THEN PROCconfig_set_boolean("Font use desktop",FNicon_selected(choices_pane%(1),17))
 :
-PROCset_num_config("Foreground colour",FNget_icon_background_colour(choices_pane%(1),4))
-PROCset_num_config("Background colour",FNget_icon_background_colour(choices_pane%(1),7))
-PROCset_num_config("Shadow colour",FNget_icon_background_colour(choices_pane%(1),10))
+PROCconfig_set_real("Foreground colour",FNget_icon_background_colour(choices_pane%(1),4))
+PROCconfig_set_real("Background colour",FNget_icon_background_colour(choices_pane%(1),7))
+PROCconfig_set_real("Shadow colour",FNget_icon_background_colour(choices_pane%(1),10))
 :
 PROCsync_options
 PROClose_font
@@ -1194,7 +1194,7 @@ IF save% THEN
   ENDIF
  ENDIF
  :
- PROCsave_config_file(choices_save$)
+ PROCconfig_save_file(choices_save$)
 ENDIF
 ENDPROC
 :
@@ -1211,27 +1211,27 @@ DEF PROCsync_options
 REM Derive the actual veriables used by the program from the configuration information stored in the
 REM config library routines.
 :
-font_size%=FNread_num_config("Font size")*16
-font_aspect%=FNread_num_config("Font aspect")
-font_name$=FNread_str_config("Font name")
-font_desktop%=FNread_opt_config("Font use desktop") AND desktop_font_available%
-bubble_delay%=FNread_num_config("Open delay")*100
-kill_delay%=FNread_num_config("Close delay")*100+bubble_delay%
-kill_bubbles%=FNread_opt_config("Close bubbles")
-draw_shadow%=FNread_opt_config("Draw shadows")
-display_bubbles%=FNread_opt_config("Open bubbles")
-hide_across_drags%=FNread_opt_config("Hide over drags")
-hide_on_click%=FNread_opt_config("Hide on clicks")
-show_tool_help%=FNread_opt_config("Show tool help")
-show_ibar_help%=FNread_opt_config("Show bar help")
-show_default_help%=FNread_opt_config("Identify silent apps")
+font_size%=PROCconfig_read_real("Font size")*16
+font_aspect%=PROCconfig_read_real("Font aspect")
+font_name$=PROCconfig_read_string("Font name")
+font_desktop%=PROCconfig_read_boolean("Font use desktop") AND desktop_font_available%
+bubble_delay%=PROCconfig_read_real("Open delay")*100
+kill_delay%=PROCconfig_read_real("Close delay")*100+bubble_delay%
+kill_bubbles%=PROCconfig_read_boolean("Close bubbles")
+draw_shadow%=PROCconfig_read_boolean("Draw shadows")
+display_bubbles%=PROCconfig_read_boolean("Open bubbles")
+hide_across_drags%=PROCconfig_read_boolean("Hide over drags")
+hide_on_click%=PROCconfig_read_boolean("Hide on clicks")
+show_tool_help%=PROCconfig_read_boolean("Show tool help")
+show_ibar_help%=PROCconfig_read_boolean("Show bar help")
+show_default_help%=PROCconfig_read_boolean("Identify silent apps")
 :
-mouse_jitter%=FNread_int_config("Mouse jitter")
-poll_delay%=FNread_int_config("Poll delay")
+mouse_jitter%=PROCconfig_read_integer("Mouse jitter")
+poll_delay%=PROCconfig_read_integer("Poll delay")
 :
-text_colour%=FNread_int_config("Foreground colour")
-background_colour%=FNread_int_config("Background colour")
-shadow_colour%=FNread_int_config("Shadow colour")
+text_colour%=PROCconfig_read_integer("Foreground colour")
+background_colour%=PROCconfig_read_integer("Background colour")
+shadow_colour%=PROCconfig_read_integer("Shadow colour")
 ENDPROC
 :
 :
@@ -1454,7 +1454,7 @@ REM Handle Message_HelpEnable (set the help state and reload the choices if requ
 :
 PROCset_help_state((b%!20 AND 1)=0)
 IF (b%!20 AND 2)=2 THEN
- PROCload_config_file("Float:Choices")
+ PROCconfig_load_file("Float:Choices")
  PROCsync_options
 ENDIF
 :
@@ -1474,11 +1474,11 @@ REM In the event of a mode change, re-bind the font handle and get the new mode 
 :
 LOCAL font_width%
 :
-font_width%=FNread_num_config("Font aspect")*font_size%/100
+font_width%=PROCconfig_read_real("Font aspect")*font_size%/100
 PROClose_font
 PROCfind_font
 REMSYS "Font_LoseFont",display_font%
-REMSYS "XFont_FindFont",,FNread_str_config("Font name"),font_width%,font_size%,0,0 TO display_font% ;flags%
+REMSYS "XFont_FindFont",,PROCconfig_read_string("Font name"),font_width%,font_size%,0,0 TO display_font% ;flags%
 REMIF (flags% AND 1) THEN SYS "Font_FindFont",,"Trinity.Medium",font_aspect%*font_size%/100,font_size%,0,0 TO display_font%
 PROCget_mode_size
 ENDPROC
