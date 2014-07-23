@@ -59,14 +59,14 @@ IgnoreTasks% = 0
 WHILE IgnoreTasks% <= IgnoreTaskListSize% AND LEN(list$) > 1
 	REM Get the next task name.
 
-	IgnoreTaskNames$(IgnoreTasks%) = FNstrip_surrounding_whitespace(LEFT$(list$, INSTR(list$, ",") - 1))
+	IgnoreTaskNames$(IgnoreTasks%) = FNstring_trim(LEFT$(list$, INSTR(list$, ",") - 1))
 	list$ = MID$(list$, INSTR(list$, ",") + 1)
 
 	REM Look up the task in the list from the Task Manager and, if it is running, record its handle
 	REM for furture reference.  This task is made a special case since we haven't yet called
 	REM Wimp_Poll and so the task manager won't know about us yet.
 
-	IF FNto_upper(IgnoreTaskNames$(IgnoreTasks%)) = FNto_upper(task_name$) THEN
+	IF FNstring_to_upper(IgnoreTaskNames$(IgnoreTasks%)) = FNstring_to_upper(task_name$) THEN
 		IgnoreTaskHandles%(IgnoreTasks%) = task_handle%
 	ELSE
 		next_task% = 0
@@ -74,7 +74,7 @@ WHILE IgnoreTasks% <= IgnoreTaskListSize% AND LEN(list$) > 1
 
 		REPEAT
 			SYS "TaskManager_EnumerateTasks", next_task%, info%, 16 TO next_task%
-			IF FNto_upper(FNctrl_string(info%!4)) = FNto_upper(IgnoreTaskNames$(IgnoreTasks%)) THEN
+			IF FNstring_to_upper(FNstring_read((info%!4)) = FNstring_to_upper(IgnoreTaskNames$(IgnoreTasks%)) THEN
 				IgnoreTaskHandles%(IgnoreTasks%) = !info%
 				found% = TRUE
 			ENDIF
@@ -111,7 +111,7 @@ loop% = 0
 found% = FALSE
 
 WHILE loop% <= IgnoreTaskListSize% AND loop% < IgnoreTasks% AND NOT found%
-	IF FNto_upper(IgnoreTaskNames$(loop%)) = FNto_upper(task_name$) THEN
+	IF FNstring_to_upper(IgnoreTaskNames$(loop%)) = FNstring_to_upper(task_name$) THEN
 		REM One has matched, so flag this and start looking for a space in the task handle array.
 
 		found% = TRUE
