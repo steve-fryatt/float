@@ -201,7 +201,7 @@ CASE b%!12 OF
   CASEb%!8OF
    WHEN4
     CASEb%!16OF
-     WHEN4:PROCset_icon_state(choices_pane%(0),5,0,NOTFNicon_selected(choices_pane%(0),4),0)
+     WHEN4:PROCicon_set_state(choices_pane%(0),5,0,NOTFNicon_selected(choices_pane%(0),4),0)
     ENDCASE
   ENDCASE
  WHENchoices_pane%(1)
@@ -1073,18 +1073,18 @@ REM before opening the window.
 :
 LOCAL size$, loop%
 :
-PROCset_icon_state(choices_pane%(0),2,PROCconfig_read_boolean("Open bubbles"),0,0)
-PROCset_icon_state(choices_pane%(0),3,kill_bubbles%,0,0)
-PROCset_icon_state(choices_pane%(0),4,hide_on_click%,0,0)
-PROCset_icon_state(choices_pane%(0),5,hide_across_drags%,NOThide_on_click%,0)
-PROCset_icon_state(choices_pane%(0),&E,show_tool_help%,0,0)
-PROCset_icon_state(choices_pane%(0),&F,show_ibar_help%,0,0)
-PROCset_icon_state(choices_pane%(0),16,show_default_help%,0,0)
+PROCicon_set_state(choices_pane%(0),2,PROCconfig_read_boolean("Open bubbles"),0,0)
+PROCicon_set_state(choices_pane%(0),3,kill_bubbles%,0,0)
+PROCicon_set_state(choices_pane%(0),4,hide_on_click%,0,0)
+PROCicon_set_state(choices_pane%(0),5,hide_across_drags%,NOThide_on_click%,0)
+PROCicon_set_state(choices_pane%(0),&E,show_tool_help%,0,0)
+PROCicon_set_state(choices_pane%(0),&F,show_ibar_help%,0,0)
+PROCicon_set_state(choices_pane%(0),16,show_default_help%,0,0)
 :
 $FNicon_indirection(choices_pane%(0),7)=LEFT$(STR$(bubble_delay%/&64),3)
 $FNicon_indirection(choices_pane%(0),&A)=LEFT$(STR$((kill_delay%-bubble_delay%)/&64),3)
-PROCset_icon_state(choices_pane%(1),0,draw_shadow%,0,0)
-PROCset_icon_state(choices_pane%(1),17,font_desktop%ANDdesktop_font_available%,NOTdesktop_font_available%,0)
+PROCicon_set_state(choices_pane%(1),0,draw_shadow%,0,0)
+PROCicon_set_state(choices_pane%(1),17,font_desktop%ANDdesktop_font_available%,NOTdesktop_font_available%,0)
 $FNicon_indirection(choices_pane%(1),&F)=font_name$
 size$=STR$(font_size%/16)
 IF INSTR(size$,".")>0 THEN size$=LEFT$(size$,INSTR(size$,".")+1)
@@ -1169,9 +1169,9 @@ PROCconfig_set_real("Font size",VAL($FNicon_indirection(choices_pane%(1),19)))
 PROCconfig_set_real("Font aspect",VAL($FNicon_indirection(choices_pane%(1),21)))
 IF desktop_font_available% THEN PROCconfig_set_boolean("Font use desktop",FNicon_selected(choices_pane%(1),17))
 :
-PROCconfig_set_real("Foreground colour",FNget_icon_background_colour(choices_pane%(1),4))
-PROCconfig_set_real("Background colour",FNget_icon_background_colour(choices_pane%(1),7))
-PROCconfig_set_real("Shadow colour",FNget_icon_background_colour(choices_pane%(1),10))
+PROCconfig_set_real("Foreground colour",FNicon_background_colour(choices_pane%(1),4))
+PROCconfig_set_real("Background colour",FNicon_background_colour(choices_pane%(1),7))
+PROCconfig_set_real("Shadow colour",FNicon_background_colour(choices_pane%(1),10))
 :
 PROCsync_options
 PROClose_font
@@ -1636,7 +1636,7 @@ REM number.
 LOCAL f%
 :
 IF c%>=4 AND c%<=8 THEN f%=0 ELSE f%=7
-PROCset_icon_colours(w%,i%,f%,c%)
+PROCicon_set_colours(w%,i%,f%,c%)
 $FNicon_indirection(w%,i%)=STR$(c%)
 ENDPROC
 :
