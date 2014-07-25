@@ -27,6 +27,7 @@ LIBRARY "BASIC:Config"
 LIBRARY "BASIC:Icon"
 LIBRARY "BASIC:Resources"
 LIBRARY "BASIC:String"
+LIBRARY "BASIC:Template"
 LIBRARY "BASIC:Url"
 LIBRARY "BASIC:WimpError"
 LIBRARY "BASIC:WimpSprite"
@@ -191,7 +192,7 @@ CASE b%!12 OF
     CASE b%!16 OF
      WHEN 0     : PROCopen_choices_window(-1,-1) : PROCwindow_force_redraw(choices_window%)
                   SYS "Wimp_GetCaretPosition",,q%
-                  IF!q%=choices_pane%(current_choices_pane%) THEN PROCput_caret_at_end(choices_pane%(current_choices_pane%),q%!4)
+                  IF!q%=choices_pane%(current_choices_pane%) THEN PROCicon_put_caret_at_end(choices_pane%(current_choices_pane%),q%!4)
      WHEN 1     : PROCclose_options_window(FALSE,TRUE)
      WHEN 2     : PROCclose_options_window(FALSE,FALSE)
      WHEN 4,5,6 : PROCicon_set_selected(choices_window%,b%!16,TRUE) : PROCwindow_close(choices_pane%(current_choices_pane%)):current_choices_pane%=b%!16-4:!b%=choices_window%:SYS&400CB,,b%:PROCopen_choices_pane(b%):SYS&400C5,,b%
@@ -411,24 +412,24 @@ ind_size%=3000
 DIM ind_area% ind_size%
 DIM choices_pane%(2)
 :
-PROCopen_templates(resources_path$+"Templates")
+PROCtemplate_open(resources_path$+"Templates")
 :
-PROCload_template("Panel",b%,ind_area%,ind_size%,-1)
+PROCtemplate_load("Panel",b%,ind_area%,ind_size%,-1)
 SYS "Wimp_CreateWindow",,b% TO bubble_window%
-PROCload_template("ProgInfo",b%,ind_area%,ind_size%,-1)
+PROCtemplate_load("ProgInfo",b%,ind_area%,ind_size%,-1)
 SYS "Wimp_CreateWindow",,b% TO prog_info_window%
-PROCload_template("Choices",b%,ind_area%,ind_size%,-1)
+PROCtemplate_load("Choices",b%,ind_area%,ind_size%,-1)
 SYS "Wimp_CreateWindow",,b% TO choices_window%
-PROCload_template("Choices0",b%,ind_area%,ind_size%,-1)
+PROCtemplate_load("Choices0",b%,ind_area%,ind_size%,-1)
 SYS "Wimp_CreateWindow",,b% TO choices_pane%(0)
-PROCload_template("Choices1",b%,ind_area%,ind_size%,-1)
+PROCtemplate_load("Choices1",b%,ind_area%,ind_size%,-1)
 SYS "Wimp_CreateWindow",,b% TO choices_pane%(1)
-PROCload_template("Choices2",b%,ind_area%,ind_size%,-1)
+PROCtemplate_load("Choices2",b%,ind_area%,ind_size%,-1)
 SYS "Wimp_CreateWindow",,b% TO choices_pane%(2)
-PROCload_template("Colours",b%,ind_area%,ind_size%,-1)
+PROCtemplate_load("Colours",b%,ind_area%,ind_size%,-1)
 SYS "Wimp_CreateWindow",,b% TO colours_window%
 :
-PROCclose_templates
+PROCtemplate_close
 :
 $FNicon_indirection(prog_info_window%,4)=CHR$(169) + " Stephen Fryatt, 2002-" + MID$(build_date$, 8)
 $FNicon_indirection(prog_info_window%,6)=build_version$+" ("+build_date$+")"
