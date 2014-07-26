@@ -22,7 +22,6 @@ REM
 REM See the Licence for the specific language governing
 REM permissions and limitations under the Licence.
 :
-LIBRARY "BASIC:WimpLib"
 LIBRARY "BASIC:Config"
 LIBRARY "BASIC:Icon"
 LIBRARY "BASIC:Menu"
