@@ -25,6 +25,7 @@ REM permissions and limitations under the Licence.
 LIBRARY "BASIC:WimpLib"
 LIBRARY "BASIC:Config"
 LIBRARY "BASIC:Icon"
+LIBRARY "BASIC:Menu"
 LIBRARY "BASIC:Resources"
 LIBRARY "BASIC:String"
 LIBRARY "BASIC:Template"
@@ -176,7 +177,7 @@ CASE b%!12 OF
  WHEN -2
   CASE b%!8 OF
    WHEN 4 : PROCset_help_state(NOT display_bubbles%)
-   WHEN 2 : PROCset_menu_state(icon_bar_menu%, 3, show_all_help%, FALSE) : PROCdisplay_bar_menu(icon_bar_menu%,5,2,!b%)
+   WHEN 2 : PROCmenu_set_state(icon_bar_menu%, 3, show_all_help%, FALSE) : PROCmenu_create_iconbar(icon_bar_menu%, !b%)
    WHEN 1 : PROCopen_choices_window(!b%,b%!4)
   ENDCASE
  WHEN choices_window%
@@ -209,8 +210,8 @@ CASE b%!12 OF
   CASEb%!8OF
    WHEN4
     CASEb%!16OF
-     WHEN5,8,&B:PROCdisplay_icon_menu(colours_window%,choices_pane%(1),b%!16):colours_icon%=b%!16-1
-     WHEN&E:font_menu%=FNbuild_font_menu:PROCdisplay_icon_menu(font_menu%,choices_pane%(1),&E)
+     WHEN5,8,&B:PROCmenu_create_popup(colours_window%,choices_pane%(1),b%!16):colours_icon%=b%!16-1
+     WHEN&E:font_menu%=FNbuild_font_menu:PROCmenu_create_popup(font_menu%,choices_pane%(1),&E)
     ENDCASE
   ENDCASE
  WHEN colours_window%
@@ -218,7 +219,7 @@ CASE b%!12 OF
   PROCwindow_close(colours_window%)
   PROCicon_redraw(choices_pane%(1),colours_icon%)
  WHEN prog_info_window%
-  IF b%!16=8 THEN PROCurl_launch(FNmessage_lookup("SupportURL")):PROCdisplay_menu(-1,0,0)
+  IF b%!16=8 THEN PROCurl_launch(FNmessage_lookup("SupportURL")):PROCmenu_create(-1,0,0)
 ENDCASE
 ENDPROC
 :
@@ -243,12 +244,12 @@ re_open_menu%=(q%!8=1)
 :
 REM Act on the menu choice.
 :
-CASE menu_up% OF
+CASE FNmenu_current_handle OF
  WHEN icon_bar_menu%
   CASE !b% OF
    WHEN 1 : OSCLI("%Filer_Run Float:!Help")
    WHEN 2 : PROCopen_choices_window(!q%,q%!4)
-   WHEN 3 : show_all_help%=NOT show_all_help% : PROCset_menu_state(icon_bar_menu%, 3, show_all_help%, FALSE)
+   WHEN 3 : show_all_help%=NOT show_all_help% : PROCmenu_set_state(icon_bar_menu%, 3, show_all_help%, FALSE)
    WHEN 4 : quit%=TRUE
   ENDCASE
  WHEN font_menu%
@@ -261,7 +262,7 @@ ENDCASE
 :
 REM Re-open the menu if ADJUST was used.
 :
-IF re_open_menu% THEN PROCdisplay_menu(menu_up%,0,0)
+IF re_open_menu% THEN PROCmenu_create(FNmenu_current_handle,0,0)
 ENDPROC
 :
 :
@@ -440,11 +441,11 @@ sprite_area%=FNwimpsprite_load_user_sprites("Float:Sprites")
 :
 REM Load the menu definitions into memory and create the menus.
 :
+PROCmenu_initialise
 !q%=prog_info_window%
-PROCload_menu_block(resources_path$+"Menus",q%)
+PROCmenu_load_templates(resources_path$+"Menus",q%)
 icon_bar_menu%=!q%
 font_menu%=0
-menu_up%=0
 :
 REM Set up all the global variables
 :
@@ -610,7 +611,7 @@ CASE b%!32 OF
  WHEN bubble_window%    : REM Don't return help on the bubble itself...
  OTHERWISE
   SYS "Wimp_GetMenuState",1,q%,b%!32,b%!36
-  CASE menu_up% OF
+  CASE FNmenu_current_handle OF
    WHEN icon_bar_menu%  : IF !q%>-1 THEN token$="Menu0"+STR$(!q%+1)
    WHEN font_menu%      : IF !q%>-1 THEN token$="MenuFF"
   ENDCASE
