@@ -52,7 +52,7 @@ DIM IgnoreTaskNames$(IgnoreTaskListSize%), IgnoreTaskHandles%(IgnoreTaskListSize
 
 REM Oepn the file and take it one line at a time.
 
-list$ = PROCconfig_read_string("Ignore tasks") + ","
+list$ = FNconfig_read_string("Ignore tasks") + ","
 
 IgnoreTasks% = 0
 
