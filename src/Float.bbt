@@ -254,7 +254,7 @@ CASE FNmenu_current_handle OF
   ENDCASE
  WHEN font_menu%
   SYS "Font_DecodeMenu",0,font_menu%,b%,q%,255
-  $FNicon_indirection(choices_pane%(1),15)=FNfont_name(FNstring_read((q%))
+  $FNicon_indirection(choices_pane%(1),15)=FNfont_name(FNstring_read(q%))
   PROCicon_redraw(choices_pane%(1),15)
   PROCdelete_font_menu
   IF re_open_menu% THEN font_menu%=FNbuild_font_menu
@@ -283,7 +283,7 @@ CASE b%!16 OF
  WHEN &503   : IF (NOT FNignore_task(b%!4)) OR show_all_help% THEN PROCexpand_text(b%+20)
  WHEN &504   : PROCmessage_help_enable
  WHEN &400C1 : PROCnew_mode
- WHEN &400C2 : PROCignore_task_starting(b%!4, FNstring_read((b%+28))
+ WHEN &400C2 : PROCignore_task_starting(b%!4, FNstring_read(b%+28))
  WHEN &400C3 : PROCignore_task_quitting(b%!4)
  WHEN &400C9 : IF b%!20=font_menu% THEN PROCdelete_font_menu
  WHEN &400CF : PROClose_font : PROCfind_font
@@ -1166,7 +1166,7 @@ PROCconfig_set_boolean("Identify silent apps",FNicon_selected(choices_pane%(0),1
 PROCconfig_set_real("Open delay",VAL($FNicon_indirection(choices_pane%(0),7)))
 PROCconfig_set_real("Close delay",VAL($FNicon_indirection(choices_pane%(0),&A)))
 PROCconfig_set_boolean("Draw shadows",FNicon_selected(choices_pane%(1),0))
-PROCconfig_set_string("Font name",FNstring_read((FNicon_indirection(choices_pane%(1),&F)))
+PROCconfig_set_string("Font name",FNstring_read(FNicon_indirection(choices_pane%(1),&F)))
 PROCconfig_set_real("Font size",VAL($FNicon_indirection(choices_pane%(1),19)))
 PROCconfig_set_real("Font aspect",VAL($FNicon_indirection(choices_pane%(1),21)))
 IF desktop_font_available% THEN PROCconfig_set_boolean("Font use desktop",FNicon_selected(choices_pane%(1),17))
@@ -1537,7 +1537,7 @@ IF menu_buf% <> 0 THEN
   $(mess_buf%+16)=fonts_message_file$
   SYS "MessageTrans_OpenFile",mess_buf%,mess_buf%+16,0
   SYS "MessageTrans_Lookup",mess_buf%,"FontList",0 TO ,,menu_title%
-  IF LEN(FNstring_read((menu_title%))>12 THEN
+  IF LEN(FNstring_read(menu_title%))>12 THEN
    menu_buf%!28=menu_buf%!28 OR &10
   ELSE
    menu_buf%!28=menu_buf%!28 AND &FFFFFFEF

@@ -74,7 +74,7 @@ WHILE IgnoreTasks% <= IgnoreTaskListSize% AND LEN(list$) > 1
 
 		REPEAT
 			SYS "TaskManager_EnumerateTasks", next_task%, info%, 16 TO next_task%
-			IF FNstring_to_upper(FNstring_read((info%!4)) = FNstring_to_upper(IgnoreTaskNames$(IgnoreTasks%)) THEN
+			IF FNstring_to_upper(FNstring_read(info%!4)) = FNstring_to_upper(IgnoreTaskNames$(IgnoreTasks%)) THEN
 				IgnoreTaskHandles%(IgnoreTasks%) = !info%
 				found% = TRUE
 			ENDIF
