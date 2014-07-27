@@ -38,8 +38,8 @@ LIBRARY "src/Mem.bbt"
 :
 REM These values get replaced by tokenize.
 :
-build_version$ = "1.10"
-build_date$ = "01 Jul 2009"
+build_version$ = "-.--"
+build_date$ = "DD Mmm YYYY"
 :
 PROCwimperror_initialise("Float","!float")
 ON ERROR result%=FNwimperror_program : END
