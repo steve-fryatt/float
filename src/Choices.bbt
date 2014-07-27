@@ -1,0 +1,190 @@
+REM >!Float-Choices
+REM
+REM Copyright 1999-2014, Stephen Fryatt (info@stevefryatt.org.uk)
+REM
+REM This file is part of Float:
+REM
+REM   http://www.stevefryatt.org.uk/software/
+REM
+REM Licensed under the EUPL, Version 1.1 only (the "Licence");
+REM You may not use this work except in compliance with the
+REM Licence.
+REM
+REM You may obtain a copy of the Licence at:
+REM
+REM   http://joinup.ec.europa.eu/software/page/eupl
+REM
+REM Unless required by applicable law or agreed to in
+REM writing, software distributed under the Licence is
+REM distributed on an "AS IS" basis, WITHOUT WARRANTIES
+REM OR CONDITIONS OF ANY KIND, either express or implied.
+REM
+REM See the Licence for the specific language governing
+REM permissions and limitations under the Licence.
+
+
+REM Initialise the choices module.
+REM
+REM This must be called while the Templates file is open.
+REM
+REM \TODO -- This relies on the global b%!
+:
+DEF PROCchoices_initialise
+LOCAL ind_area%, ind_size%
+
+REM Allocate indirected data memory for choices windows.
+
+ind_size% = 3000
+DIM ind_area% ind_size%
+
+REM Set the window handle array for the panes.
+
+DIM ChoicesPane%(2)
+ChoicesCurrentPane% = 0
+
+REM Load the choices templates.
+
+PROCtemplate_load("Choices", b%, ind_area%, ind_size%, -1)
+SYS "Wimp_CreateWindow",,b% TO ChoicesWindow%
+PROCtemplate_load("Choices0", b%, ind_area%, ind_size%, -1)
+SYS "Wimp_CreateWindow",,b% TO ChoicesPane%(0)
+PROCtemplate_load("Choices1", b%, ind_area%, ind_size%, -1)
+SYS "Wimp_CreateWindow",,b% TO ChoicesPane%(1)
+PROCtemplate_load("Choices2",b%, ind_area%, ind_size%, -1)
+SYS "Wimp_CreateWindow",,b% TO ChoicesPane%(2)
+ENDPROC
+
+
+REM Open the Choices dialogue on screen.
+:
+DEF PROCchoices_open_window(x%, y%)
+:
+REM Copy the information from the configuration settings into the icons in the options window,
+REM before opening the window.
+:
+LOCAL size$, loop%
+:
+PROCicon_set_state(ChoicesPane%(0), 2, FNconfig_read_boolean("Open bubbles"), 0, 0)
+PROCicon_set_state(ChoicesPane%(0), 3, kill_bubbles%, 0, 0)
+PROCicon_set_state(ChoicesPane%(0), 4, hide_on_click%, 0, 0)
+PROCicon_set_state(ChoicesPane%(0), 5, hide_across_drags%, NOT hide_on_click%, 0)
+PROCicon_set_state(ChoicesPane%(0), 14, show_tool_help%, 0, 0)
+PROCicon_set_state(ChoicesPane%(0), 15, show_ibar_help%, 0, 0)
+PROCicon_set_state(ChoicesPane%(0), 16, show_default_help%, 0, 0)
+$FNicon_indirection(ChoicesPane%(0), 7) = LEFT$(STR$(bubble_delay% / &64), 3)
+$FNicon_indirection(ChoicesPane%(0), 10) = LEFT$(STR$((kill_delay% - bubble_delay%) / &64), 3)
+
+PROCicon_set_state(ChoicesPane%(1), 0, draw_shadow%, 0, 0)
+PROCicon_set_state(ChoicesPane%(1), 17, font_desktop% AND desktop_font_available%, NOT desktop_font_available%, 0)
+$FNicon_indirection(ChoicesPane%(1), 15) = font_name$
+size$ = STR$(font_size% / 16)
+IF INSTR(size$, ".") > 0 THEN size$ = LEFT$(size$, INSTR(size$, ".") + 1)
+$FNicon_indirection(ChoicesPane%(1), 19) = size$
+$FNicon_indirection(ChoicesPane%(1), 21) = STR$(font_aspect%)
+
+PROCset_colour_icon(ChoicesPane%(1), 4, text_colour%)
+PROCset_colour_icon(ChoicesPane%(1), 7, background_colour%)
+PROCset_colour_icon(ChoicesPane%(1), 10, shadow_colour%)
+
+IF x% >= 0 AND y% >= 0 THEN
+	ChoicesCurrentPane% = 0
+	FOR loop% = 0 TO 3
+		PROCicon_set_selected(ChoicesWindow%, 4 + loop%, (loop% = ChoicesCurrentPane%))
+	NEXT loop%
+	PROCwindow_open_centred_at(ChoicesWindow%, x%, y%)
+	PROCchoices_open_pane(0)
+ENDIF
+ENDPROC
+
+
+
+DEF PROCchoices_open_pane(pane%)
+ChoicesCurrentPane% = pane%
+PROCwindow_open_nested_in_icon(ChoicesPane%(ChoicesCurrentPane%), ChoicesWindow%, 3, 0, -1)
+ENDPROC
+
+
+
+
+DEF PROCchoices_close_window(close%,save%)
+:
+REM Store the contents of the options window into the configuration structure and re-sync the
+REM variables used by the program. Close the window and/or save the new options.
+:
+LOCAL old_open_state%, change_open_state%
+:
+old_open_state% = display_bubbles%
+change_open_state% = (FNconfig_read_boolean("Open bubbles") <> FNicon_selected(ChoicesWindow%, 0))
+:
+PROCconfig_set_boolean("Open bubbles", FNicon_selected(ChoicesPane%(0), 2))
+PROCconfig_set_boolean("Close bubbles", FNicon_selected(ChoicesPane%(0), 3))
+PROCconfig_set_boolean("Hide on clicks", FNicon_selected(ChoicesPane%(0), 4))
+PROCconfig_set_boolean("Hide over drags", FNicon_selected(ChoicesPane%(0), 5))
+PROCconfig_set_boolean("Show tool help", FNicon_selected(ChoicesPane%(0), 14))
+PROCconfig_set_boolean("Show bar help", FNicon_selected(ChoicesPane%(0), 15))
+PROCconfig_set_boolean("Identify silent apps", FNicon_selected(ChoicesPane%(0), 16))
+PROCconfig_set_real("Open delay", VAL($FNicon_indirection(ChoicesPane%(0), 7)))
+PROCconfig_set_real("Close delay", VAL($FNicon_indirection(ChoicesPane%(0), 10)))
+PROCconfig_set_boolean("Draw shadows", FNicon_selected(ChoicesPane%(1), 0))
+PROCconfig_set_string("Font name", FNstring_read(FNicon_indirection(ChoicesPane%(1), 15)))
+PROCconfig_set_real("Font size", VAL($FNicon_indirection(ChoicesPane%(1), 19)))
+PROCconfig_set_real("Font aspect", VAL($FNicon_indirection(ChoicesPane%(1), 21)))
+IF desktop_font_available% THEN PROCconfig_set_boolean("Font use desktop", FNicon_selected(ChoicesPane%(1), 17))
+:
+PROCconfig_set_real("Foreground colour", FNicon_background_colour(ChoicesPane%(1), 4))
+PROCconfig_set_real("Background colour", FNicon_background_colour(ChoicesPane%(1), 7))
+PROCconfig_set_real("Shadow colour", FNicon_background_colour(ChoicesPane%(1), 10))
+:
+PROCchoices_sync
+PROClose_font
+PROCfind_font
+IF change_open_state% THEN PROCset_help_state(display_bubbles%) ELSE PROCset_help_state(old_open_state%)
+IF close% THEN PROCwindow_close(ChoicesWindow%)
+:
+IF save% THEN
+	IF choices_save$ = "" THEN
+		SYS "XOS_ReadVarVal", "Choices$Write", 0, -1, 0, 0 TO ,,new_choices%
+		IF new_choices% <> 0 THEN
+			SYS "XOS_ReadVarVal", "Choices$Write", q%, 256, 0, 0 TO ,,len%
+			q%?len% = 13
+			choices_save$ = $q% + ".Float"
+			SYS "OS_File", 17, choices_save$ TO object%
+			IF object% = 0 THEN SYS "OS_File", 8, choices_save$
+				choices_save$ += ".Choices"
+			ELSE
+				choices_save$ = "<Float$Dir>.Choices"
+			ENDIF
+		ENDIF
+
+		PROCconfig_save_file(choices_save$)
+	ENDIF
+ENDPROC
+
+DEF PROCchoices_sync
+:
+REM Derive the actual veriables used by the program from the configuration information stored in the
+REM config library routines.
+:
+font_size% = FNconfig_read_real("Font size") * 16
+font_aspect% = FNconfig_read_real("Font aspect")
+font_name$ = FNconfig_read_string("Font name")
+font_desktop% = FNconfig_read_boolean("Font use desktop") AND desktop_font_available%
+bubble_delay% = FNconfig_read_real("Open delay") * 100
+kill_delay% = FNconfig_read_real("Close delay") * 100 + bubble_delay%
+kill_bubbles% = FNconfig_read_boolean("Close bubbles")
+draw_shadow% = FNconfig_read_boolean("Draw shadows")
+display_bubbles% = FNconfig_read_boolean("Open bubbles")
+hide_across_drags% = FNconfig_read_boolean("Hide over drags")
+hide_on_click% = FNconfig_read_boolean("Hide on clicks")
+show_tool_help% = FNconfig_read_boolean("Show tool help")
+show_ibar_help% = FNconfig_read_boolean("Show bar help")
+show_default_help% = FNconfig_read_boolean("Identify silent apps")
+:
+mouse_jitter% = FNconfig_read_integer("Mouse jitter")
+poll_delay% = FNconfig_read_integer("Poll delay")
+:
+text_colour% = FNconfig_read_integer("Foreground colour")
+background_colour% = FNconfig_read_integer("Background colour")
+shadow_colour% = FNconfig_read_integer("Shadow colour")
+ENDPROC
+
