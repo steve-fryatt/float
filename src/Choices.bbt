@@ -52,6 +52,8 @@ PROCtemplate_load("Choices1", b%, ind_area%, ind_size%, -1)
 SYS "Wimp_CreateWindow",,b% TO ChoicesPane%(1)
 PROCtemplate_load("Choices2",b%, ind_area%, ind_size%, -1)
 SYS "Wimp_CreateWindow",,b% TO ChoicesPane%(2)
+PROCtemplate_load("IgnorePane",b%, ind_area%, ind_size%, -1)
+SYS "Wimp_CreateWindow",,b% TO ChoicesIgnorePane%
 ENDPROC
 
 
@@ -101,6 +103,9 @@ ENDPROC
 DEF PROCchoices_open_pane(pane%)
 ChoicesCurrentPane% = pane%
 PROCwindow_open_nested_in_icon(ChoicesPane%(ChoicesCurrentPane%), ChoicesWindow%, 3, 0, -1)
+IF ChoicesCurrentPane% = 2 THEN
+	PROCwindow_open_nested_in_icon(ChoicesIgnorePane%, ChoicesPane%(ChoicesCurrentPane%), 2, 44, -1)
+ENDIF
 ENDPROC
 
 

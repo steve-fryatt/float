@@ -79,7 +79,7 @@ next_poll%+=poll_delay%
 :
 CASE reason% OF
  WHEN 0     : PROCidle_event
- WHEN 1     : IF !b% = ChoicesPane%(2) THEN PROCignore_redraw_list ELSE PROCredraw_bubble
+ WHEN 1     : IF !b% = ChoicesIgnorePane% THEN PROCignore_redraw_list ELSE PROCredraw_bubble
  WHEN 2     : SYS "Wimp_OpenWindow",,b%
  WHEN 3     : SYS "Wimp_CloseWindow",,b%
  WHEN 6     : PROCmouse_click
