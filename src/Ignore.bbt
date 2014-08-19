@@ -40,9 +40,10 @@ REM \param task_name$		The name of the parent Float task.
 :
 DEF PROCignore_initialise(task_handle%, task_name$)
 
-LOCAL list$, next_task%, found%, info%
+LOCAL list$, next_task%, found%, info%, claim%
 
-info% = FNmem_stack(16)
+claim% = 16
+info% = FNmem_stack(claim%)
 IF info% = 0 THEN ENDPROC
 
 REM We can deal with this many tasks to ignore.
@@ -73,7 +74,7 @@ WHILE IgnoreTasks% <= IgnoreTaskListSize% AND LEN(list$) > 1
 		found% = FALSE
 
 		REPEAT
-			SYS "TaskManager_EnumerateTasks", next_task%, info%, 16 TO next_task%
+			SYS "TaskManager_EnumerateTasks", next_task%, info%, claim% TO next_task%
 			IF FNstring_to_upper(FNstring_read(info%!4)) = FNstring_to_upper(IgnoreTaskNames$(IgnoreTasks%)) THEN
 				IgnoreTaskHandles%(IgnoreTasks%) = !info%
 				found% = TRUE
