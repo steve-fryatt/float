@@ -235,24 +235,33 @@ DEF PROCwimp_message
 CASE b%!16 OF
 WHEN &0
 	quit%=TRUE
+
 WHEN &502
 	PROCsend_interactive_help
+
 WHEN &503
 	IF (NOT FNignore_task(b%!4)) OR show_all_help% THEN PROCexpand_text(b%+20)
+
 WHEN &504
 	PROCmessage_help_enable
+
 WHEN &400C1
 	PROCnew_mode
+
 WHEN &400C2
 	SYS "XOS_GenerateError", b%+28 TO task_name$
 	PROCignore_task_starting(b%!4, task_name$)
+
 WHEN &400C3
 	PROCignore_task_quitting(b%!4)
+
 WHEN &400C9
 	IF b%!20 = font_menu% THEN PROCdelete_font_menu
+
 WHEN &400CF
 	PROClose_font
 	PROCfind_font
+
 WHEN &4E383
 	PROCurl_bounce(b%)
 ENDCASE
@@ -265,6 +274,7 @@ DEF PROCbounced_message
 CASE b%!16 OF
 WHEN &502
 	IF show_default_help% OR show_all_help% THEN PROCmake_default_task_help(icon_bar_help%)
+
 WHEN &4AF80
 	PROCurl_bounce(b%)
 ENDCASE
@@ -1025,8 +1035,8 @@ REM The value is read from the EventV routine and the flag reset for next time.
 :
 LOCAL key_pressed%
 :
-key_pressed%=!code_block%
-!code_block%=0
+key_pressed% = !down_flag%
+!down_flag% = FALSE
 =key_pressed%
 :
 :
@@ -1045,8 +1055,8 @@ REM The value is read from the EventV routine and the flag reset for next time.
 :
 LOCAL mouse_pressed%
 :
-mouse_pressed%=code_block%!8
-code_block%!8=0
+mouse_pressed% = !mouse_flag%
+!mouse_flag% = FALSE
 =mouse_pressed%
 :
 :
@@ -1065,8 +1075,8 @@ REM The value is read from the EventV routine and the flag reset for next time.
 :
 LOCAL key_released%
 :
-key_released%=code_block%!4
-code_block%!4=0
+key_released% = !up_flag%
+!up_flag% = FALSE
 =key_released%
 :
 :
@@ -1080,53 +1090,52 @@ REM ----------------------------------------------------------------------------
 DEF PROClink_to_event_v
 :
 REM Assemble a small routine to monitor for keypresses and link it to EventV.
-:
 LOCAL code_size%
 :
 REM Claim space in the RMA for the code: it can't go in our workspace as we want to monitor all the
 REM time, not just when we are paged in.
 :
-code_size%=80
+code_size% = 80
 SYS "OS_Module",6,,,code_size% TO ,,code_block%
 :
 REM Assemble the code.
 :
 P%=code_block%
-L%=code_block%+code_size%
+L%=code_block% + code_size%
 :
 [OPT %1010
-.down_flag
-  EQUD    0
+.down_flag%
+	EQUD	0
 
-.up_flag
-  EQUD    0
+.up_flag%
+	EQUD	0
 
-.mouse_flag
-  EQUD    0
+.mouse_flag%
+	EQUD	0
 
-.code
-  STMFD   R13!,{R0,R14}
-  CMP     R0,#11
-  LDMNEFD R13!,{R0,PC}
+.eventv_code%
+	STMFD	R13!,{R0,R14}
+	CMP	R0,#11
+	LDMNEFD	R13!,{R0,PC}
 
-  MVN     R0,#NOT-1
-  CMP     R1,#1
-  STREQ   R0,down_flag
-  CMP     R2,#&70
-  STRGE   R0,mouse_flag
+	MVN	R0,#NOT-1
+	CMP	R1,#1
+	STREQ	R0,down_flag%
+	CMP	R2,#&70
+	STRGE	R0,mouse_flag%
 
-  CMP     R1,#1
-  LDMEQFD R13!,{R0,PC}
+	CMP	R1,#1
+	LDMEQFD	R13!,{R0,PC}
 
-  CMP     R2,#&70
-  STRGE   R0,up_flag
-  LDMFD   R13!,{R0,PC}
+	CMP	R2,#&70
+	STRGE	R0,up_flag%
+	LDMFD	R13!,{R0,PC}
 ]
-:
+
 REM Link the code onto the EventV list.
-:
-SYS "OS_Claim",&10,code_block%+12,0
-SYS "OS_Byte",14,&10
+
+SYS "OS_Claim", &10, eventv_code%, 0
+SYS "OS_Byte", 14, &10
 ENDPROC
 :
 :
@@ -1141,8 +1150,8 @@ DEF PROCun_link_event_v
 :
 REM Revove our routine from EventV and free the space it occupied in the RMA.
 :
-SYS "OS_Byte",13,&10
-SYS "OS_Release",&10,code_block%+12,0
+SYS "OS_Byte", 13, &10
+SYS "OS_Release", &10, eventv_code%, 0
 SYS "OS_Module",7,,code_block%
 ENDPROC
 :

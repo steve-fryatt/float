@@ -87,7 +87,7 @@ processed% = TRUE
 CASE b%!12 OF
 WHEN ChoicesWindow%
 	CASE b%!8 OF
-	WHEN 4
+	WHEN 4 : REM Select
 		CASE b%!16 OF
 		WHEN 0
 			PROCwindow_close(ChoicesWindow%)
@@ -100,7 +100,7 @@ WHEN ChoicesWindow%
 			PROCwindow_close(ChoicesPane%(ChoicesCurrentPane%))
 			PROCchoices_open_pane(b%!16 - 4)
 		ENDCASE
-	WHEN 1
+	WHEN 1 : REM Adjust
 		CASE b%!16 OF
 		WHEN 0
 			PROCchoices_open_window(-1, -1)
@@ -111,7 +111,7 @@ WHEN ChoicesWindow%
 			PROCchoices_close_window(FALSE, TRUE)
 		WHEN 2
 			PROCchoices_close_window(FALSE, FALSE)
-		WHEN 4,5,6
+		WHEN 4, 5, 6
 			PROCicon_set_selected(ChoicesWindow%, b%!16, TRUE)
 			PROCwindow_close(ChoicesPane%(ChoicesCurrentPane%))
 			PROCchoices_open_pane(b%!16 - 4)
@@ -120,7 +120,7 @@ WHEN ChoicesWindow%
 
 WHEN ChoicesPane%(0)
 	CASE b%!8 OF
-	WHEN 4
+	WHEN 4 : REM Select
 		CASE b%!16 OF
 		WHEN 4
 			PROCicon_set_state(ChoicesPane%(0), 5, 0, NOT FNicon_selected(ChoicesPane%(0), 4), 0)
@@ -129,7 +129,7 @@ WHEN ChoicesPane%(0)
 
 WHEN ChoicesPane%(1)
 	CASE b%!8 OF
-	WHEN 4
+	WHEN 4 : REM Select
 		CASE b%!16 OF
 		WHEN 5, 8, 11
 			PROCmenu_create_popup(colours_window%, ChoicesPane%(1), b%!16)
@@ -214,6 +214,9 @@ ENDCASE
 
 
 REM Open the Choices dialogue on screen.
+REM
+REM \param x%			The X coordinate to open the dialogue at.
+REM \param y%			The Y coordinate to open the dialogue at.
 :
 DEF PROCchoices_open_window(x%, y%)
 :
@@ -255,7 +258,11 @@ ENDIF
 ENDPROC
 
 
-
+REM Open a pane of the Choices dialogue, nesting it in the appropriate place
+REM in the parent window. If the pane has sub-panes, open those nested as well.
+REM
+REM \param pane%		The index number of the pane to be opened.
+:
 DEF PROCchoices_open_pane(pane%)
 ChoicesCurrentPane% = pane%
 PROCwindow_open_nested_in_icon(ChoicesPane%(ChoicesCurrentPane%), ChoicesWindow%, 3, 0, -1)
@@ -267,7 +274,7 @@ ENDPROC
 
 
 
-DEF PROCchoices_close_window(close%,save%)
+DEF PROCchoices_close_window(close%, save%)
 :
 REM Store the contents of the options window into the configuration structure and re-sync the
 REM variables used by the program. Close the window and/or save the new options.
