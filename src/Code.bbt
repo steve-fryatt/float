@@ -1,0 +1,132 @@
+REM >!Float-Code
+REM
+REM Copyright 1999-2014, Stephen Fryatt (info@stevefryatt.org.uk)
+REM
+REM This file is part of Float:
+REM
+REM   http://www.stevefryatt.org.uk/software/
+REM
+REM Licensed under the EUPL, Version 1.1 only (the "Licence");
+REM You may not use this work except in compliance with the
+REM Licence.
+REM
+REM You may obtain a copy of the Licence at:
+REM
+REM   http://joinup.ec.europa.eu/software/page/eupl
+REM
+REM Unless required by applicable law or agreed to in
+REM writing, software distributed under the Licence is
+REM distributed on an "AS IS" basis, WITHOUT WARRANTIES
+REM OR CONDITIONS OF ANY KIND, either express or implied.
+REM
+REM See the Licence for the specific language governing
+REM permissions and limitations under the Licence.
+
+
+REM Initialise the code module for tracking keyboard and mouse activity,
+REM assembling a small routine in the RMA and linking it on to EventV.
+:
+DEF PROCcode_initialise
+LOCAL code_size%
+
+REM Claim space in the RMA for the code: it can't go in our workspace as we want
+REM to monitor all the time, not just when we are paged in.
+
+code_size% = 80
+SYS "OS_Module",6,,,code_size% TO ,,CodeBlock%%
+
+REM Assemble the code.
+
+P%=CodeBlock%%
+L%=CodeBlock%% + code_size%
+:
+[OPT %1010
+.CodeDownFlag%
+	EQUD	0
+
+.CodeUpFlag%
+	EQUD	0
+
+.CodeMouseFlag%
+	EQUD	0
+
+.CodeEventVRoutine%
+	STMFD	R13!,{R0,R14}
+	CMP	R0,#11
+	LDMNEFD	R13!,{R0,PC}
+
+	MVN	R0,#NOT-1
+	CMP	R1,#1
+	STREQ	R0,CodeDownFlag%
+	CMP	R2,#&70
+	STRGE	R0,CodeMouseFlag%
+
+	CMP	R1,#1
+	LDMEQFD	R13!,{R0,PC}
+
+	CMP	R2,#&70
+	STRGE	R0,CodeUpFlag%
+	LDMFD	R13!,{R0,PC}
+]
+
+REM Link the code onto the EventV list.
+
+SYS "OS_Claim", &10, CodeEventVRoutine%, 0
+SYS "OS_Byte", 14, &10
+ENDPROC
+
+
+REM Finalise the code module, delinking the assembled code from EventV and
+REM freeing the space that it occupied in the RMA.
+:
+DEF PROCcode_finalise
+SYS "OS_Byte", 13, &10
+SYS "OS_Release", &10, CodeEventVRoutine%, 0
+SYS "OS_Module",7,,CodeBlock%%
+ENDPROC
+
+
+REM Detect whether a key has been pressed on the keyboard since the last time
+REM the function was called.
+REM
+REM \return			TRUE if a key has been pressed; else FALSE.
+:
+DEF FNcode_key_pressed
+LOCAL key_pressed%
+
+REM Read the value from the EventV routine, and reset the flag for next time.
+
+key_pressed% = !CodeDownFlag%
+!CodeDownFlag% = FALSE
+=key_pressed%
+
+
+REM Detect whether a mouse button has been pressed since the last time the
+REM function was called.
+REM
+REM \return			TRUE if a button has been pressed; else FALSE.
+:
+DEF FNcode_mouse_pressed
+LOCAL mouse_pressed%
+
+REM Read the value from the EventV routine, and reset the flag for next time.
+
+mouse_pressed% = !CodeMouseFlag%
+!CodeMouseFlag% = FALSE
+=mouse_pressed%
+
+
+REM Detect whether a mouse button has been released since the last time the
+REM function was called.
+REM
+REM \return			TRUE if a button has been released; else FALSE.
+:
+DEF FNcode_mouse_released
+LOCAL key_released%
+
+REM Read the value from the EventV routine, and reset the flag for next time.
+
+key_released% = !CodeUpFlag%
+!CodeUpFlag% = FALSE
+=key_released%
+

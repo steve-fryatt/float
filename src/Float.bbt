@@ -34,6 +34,7 @@ LIBRARY "BASIC:WimpSprite"
 LIBRARY "BASIC:Window"
 
 LIBRARY "src/Choices.bbt"
+LIBRARY "src/Code.bbt"
 LIBRARY "src/Ignore.bbt"
 LIBRARY "src/Mem.bbt"
 
@@ -99,9 +100,9 @@ SYS "Wimp_GetPointerInfo",, b%+20
 significant_movement% = (ABS(b%!20 - mouse_x%) > mouse_jitter% OR ABS(b%!24 - mouse_y%) > mouse_jitter%)
 window_change% = (mouse_window% <> b%!32)
 icon_change% = (mouse_icon% <> b%!36)
-key_pressed% = FNkey_pressed
-mouse_pressed% = FNmouse_pressed
-mouse_released% = FNmouse_released
+key_pressed% = FNcode_key_pressed
+mouse_pressed% = FNcode_mouse_pressed
+mouse_released% = FNcode_mouse_released
 
 IF mouse_pressed% THEN mouse_drag% = TRUE
 IF mouse_drag% AND mouse_released% AND NOT significant_movement% THEN mouse_drag% = FALSE
@@ -498,7 +499,7 @@ q%!28=sprite_area%
 q%!32=10
 SYS "Wimp_CreateIcon",,q% TO bar_icon_handle%
 :
-PROClink_to_event_v
+PROCcode_initialise
 ENDPROC
 :
 :
@@ -513,7 +514,7 @@ DEF PROCclose_down
 :
 REM Close the task down, losing the font and closing the messages file first.
 :
-PROCun_link_event_v
+PROCcode_finalise
 PROClose_font
 SYS "MessageTrans_CloseFile",messages%
 SYS "MessageTrans_CloseFile",tokens%
@@ -1015,144 +1016,6 @@ REM Close the backing window so the WIMP redraws the screen, then flag the bubbl
 :
 IF bubble_open% THEN PROCwindow_close(bubble_window%)
 bubble_open%=FALSE
-ENDPROC
-:
-:
-:
-:
-REM ====================================================================================================================
-REM Key and mouse button event detection
-REM ====================================================================================================================
-:
-:
-:
-:
-DEF FNkey_pressed
-:
-REM Return TRUE if a key has been pressed since the last time this function was called.
-REM
-REM The value is read from the EventV routine and the flag reset for next time.
-:
-LOCAL key_pressed%
-:
-key_pressed% = !down_flag%
-!down_flag% = FALSE
-=key_pressed%
-:
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
-:
-DEF FNmouse_pressed
-:
-REM Return TRUE if a mouse button has been pressed since the last time this function was called.
-REM
-REM The value is read from the EventV routine and the flag reset for next time.
-:
-LOCAL mouse_pressed%
-:
-mouse_pressed% = !mouse_flag%
-!mouse_flag% = FALSE
-=mouse_pressed%
-:
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
-:
-DEF FNmouse_released
-:
-REM Return TRUE if a mouse button has been released since the last time this function was called.
-REM
-REM The value is read from the EventV routine and the flag reset for next time.
-:
-LOCAL key_released%
-:
-key_released% = !up_flag%
-!up_flag% = FALSE
-=key_released%
-:
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
-:
-DEF PROClink_to_event_v
-:
-REM Assemble a small routine to monitor for keypresses and link it to EventV.
-LOCAL code_size%
-:
-REM Claim space in the RMA for the code: it can't go in our workspace as we want to monitor all the
-REM time, not just when we are paged in.
-:
-code_size% = 80
-SYS "OS_Module",6,,,code_size% TO ,,code_block%
-:
-REM Assemble the code.
-:
-P%=code_block%
-L%=code_block% + code_size%
-:
-[OPT %1010
-.down_flag%
-	EQUD	0
-
-.up_flag%
-	EQUD	0
-
-.mouse_flag%
-	EQUD	0
-
-.eventv_code%
-	STMFD	R13!,{R0,R14}
-	CMP	R0,#11
-	LDMNEFD	R13!,{R0,PC}
-
-	MVN	R0,#NOT-1
-	CMP	R1,#1
-	STREQ	R0,down_flag%
-	CMP	R2,#&70
-	STRGE	R0,mouse_flag%
-
-	CMP	R1,#1
-	LDMEQFD	R13!,{R0,PC}
-
-	CMP	R2,#&70
-	STRGE	R0,up_flag%
-	LDMFD	R13!,{R0,PC}
-]
-
-REM Link the code onto the EventV list.
-
-SYS "OS_Claim", &10, eventv_code%, 0
-SYS "OS_Byte", 14, &10
-ENDPROC
-:
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
-:
-DEF PROCun_link_event_v
-:
-REM Revove our routine from EventV and free the space it occupied in the RMA.
-:
-SYS "OS_Byte", 13, &10
-SYS "OS_Release", &10, eventv_code%, 0
-SYS "OS_Module",7,,code_block%
 ENDPROC
 :
 :
