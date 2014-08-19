@@ -76,7 +76,7 @@ PROCchoices_redraw_ignore_list
 
 REM Process mouse clicks in choices windows.
 REM
-REM \param  b%			Mouse Event data block.
+REM \param b%			Mouse Event data block.
 REM \return			TRUE if we handled the event; else FALSE.
 :
 DEF FNchoices_process_mouse(b%)
