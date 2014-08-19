@@ -312,9 +312,6 @@ REMIF flags% AND 1 THEN buffer%=0 ELSE DIM buffer% size%
 DIM buffer% size%
 SYS "MessageTrans_OpenFile",messages%,resources_path$+"Messages",buffer%
 :
-$b%="TASK"
-TASK=!b%
-:
 task_name$=FNmessage_lookup("TaskName")
 task_sprite$=FNmessage_lookup("TaskSpr")
 PROCwimperror_initialise(task_name$,task_sprite$)
@@ -336,7 +333,7 @@ q%!40=0      : REM Message_Quit
 :
 REM Register as a WIMP task.
 :
-SYS "Wimp_Initialise",wimp_needed%,TASK,task_name$,q% TO wimp_version%,TaskHandle%
+SYS "Wimp_Initialise", wimp_needed%, &4B534154, task_name$, q% TO TaskHandle%
 :
 REM Set the quit flag to false so we don't quit immediately.  Get the current time ready for
 REM calling Wimp_PollIdle - this will cause the first null poll to be returned immediately.
@@ -516,9 +513,9 @@ REM Close the task down, losing the font and closing the messages file first.
 :
 PROCcode_finalise
 PROClose_font
-SYS "MessageTrans_CloseFile",messages%
-SYS "MessageTrans_CloseFile",tokens%
-SYS "Wimp_CloseDown",TaskHandle%,TASK
+SYS "MessageTrans_CloseFile", messages%
+SYS "MessageTrans_CloseFile", tokens%
+SYS "Wimp_CloseDown", TaskHandle%, &4B534154
 ENDPROC
 :
 :
