@@ -54,7 +54,163 @@ PROCtemplate_load("Choices2",b%, ind_area%, ind_size%, -1)
 SYS "Wimp_CreateWindow",,b% TO ChoicesPane%(2)
 PROCtemplate_load("IgnorePane",b%, ind_area%, ind_size%, -1)
 SYS "Wimp_CreateWindow",,b% TO ChoicesIgnorePane%
+
+REM Initialise the colour menu selection.
+
+ChoicesColourIcon% = 0
 ENDPROC
+
+
+REM Process redraw events in choices windows.
+REM
+REM \param  b%			Redraw Event data block.
+REM \return			TRUE if we handled the event; else FALSE.
+:
+DEF FNchoices_process_redraw(b%)
+IF !b% <> ChoicesIgnorePane% THEN =FALSE
+
+PROCchoices_redraw_ignore_list
+
+=TRUE
+
+
+REM Process mouse clicks in choices windows.
+REM
+REM \param  b%			Mouse Event data block.
+REM \return			TRUE if we handled the event; else FALSE.
+:
+DEF FNchoices_process_mouse(b%)
+LOCAL processed%
+
+processed% = TRUE
+
+CASE b%!12 OF
+WHEN ChoicesWindow%
+	CASE b%!8 OF
+	WHEN 4
+		CASE b%!16 OF
+		WHEN 0
+			PROCwindow_close(ChoicesWindow%)
+			PROCwindow_close(ChoicesPane%(ChoicesCurrentPane%))
+		WHEN 1
+			PROCchoices_close_window(TRUE, TRUE)
+		WHEN 2
+			PROCchoices_close_window(TRUE, FALSE)
+		WHEN 4, 5, 6
+			PROCwindow_close(ChoicesPane%(ChoicesCurrentPane%))
+			PROCchoices_open_pane(b%!16 - 4)
+		ENDCASE
+	WHEN 1
+		CASE b%!16 OF
+		WHEN 0
+			PROCchoices_open_window(-1, -1)
+			PROCwindow_force_redraw(ChoicesWindow%)
+			SYS "Wimp_GetCaretPosition",, q%
+			IF !q% = ChoicesPane%(ChoicesCurrentPane%) THEN PROCicon_put_caret_at_end(ChoicesPane%(ChoicesCurrentPane%), q%!4)
+		WHEN 1
+			PROCchoices_close_window(FALSE, TRUE)
+		WHEN 2
+			PROCchoices_close_window(FALSE, FALSE)
+		WHEN 4,5,6
+			PROCicon_set_selected(ChoicesWindow%, b%!16, TRUE)
+			PROCwindow_close(ChoicesPane%(ChoicesCurrentPane%))
+			PROCchoices_open_pane(b%!16 - 4)
+		ENDCASE
+	ENDCASE
+
+WHEN ChoicesPane%(0)
+	CASE b%!8 OF
+	WHEN 4
+		CASE b%!16 OF
+		WHEN 4
+			PROCicon_set_state(ChoicesPane%(0), 5, 0, NOT FNicon_selected(ChoicesPane%(0), 4), 0)
+		ENDCASE
+	ENDCASE
+
+WHEN ChoicesPane%(1)
+	CASE b%!8 OF
+	WHEN 4
+		CASE b%!16 OF
+		WHEN 5, 8, 11
+			PROCmenu_create_popup(colours_window%, ChoicesPane%(1), b%!16)
+			ChoicesColourIcon% = b%!16 - 1
+		WHEN 14
+			font_menu% = FNbuild_font_menu
+			PROCmenu_create_popup(font_menu%, ChoicesPane%(1), 15)
+		ENDCASE
+	ENDCASE
+
+OTHERWISE
+	processed% = FALSE
+ENDCASE
+
+=processed%
+
+
+REM Return interactive help message tokens for parts of the Choices dialogue.
+REM
+REM \param b%			The message block from Message_HelpRequest.
+REM \param token$		Return the message token, or "" for no message.
+REM \return			TRUE if the request was handled; else FALSE.
+:
+DEF FNchoices_process_help_request(b%, RETURN token$)
+LOCAL processed%
+
+processed% = TRUE
+
+CASE b%!32 OF
+WHEN ChoicesWindow%
+	CASE b%!36 OF
+	WHEN 0, 1, 2
+		token$ = "HelpCW" + STR$(b%!36)
+	WHEN 4, 5, 6
+		token$ = "HelpCW" + STR$(b%!36 - 1)
+	OTHERWISE
+		token$ = "HelpCW"
+	ENDCASE
+
+WHEN ChoicesPane%(0)
+	CASE b%!36 OF
+	WHEN 2, 3, 4, 5
+		token$ = "HelpC0" + STR$(b%!36 - 2)
+	WHEN 7
+		token$ = "HelpC0" + STR$(b%!36 - 3)
+	WHEN 10
+		token$ = "HelpC0" + STR$(b%!36 - 5)
+	WHEN 14, 15, 16
+		token$ = "HelpC0" + STR$(b%!36 - 8)
+	ENDCASE
+
+WHEN ChoicesPane%(1)
+	CASE b%!36 OF
+	WHEN 0
+		token$ = "HelpC1" + STR$(b%!36)
+	WHEN 4
+		token$ = "HelpC1" + STR$(b%!36 - 3)
+	WHEN 7
+		token$ = "HelpC1" + STR$(b%!36 - 4)
+	WHEN 10
+		token$ = "HelpC1" + STR$(b%!36 - 6)
+	WHEN 5, 8, 22
+		token$ = "HelpC12"
+	WHEN 14, 15
+		token$ = "HelpC1" + STR$(b%!36 - 9)
+	WHEN 17
+		token$ = "HelpC1" + STR$(b%!36 - 10)
+	WHEN 19
+		token$ = "HelpC1" + STR$(b%!36 - 11)
+	WHEN 21
+		token$ = "HelpC1" + STR$(b%!36 - 12)
+	ENDCASE
+
+WHEN ChoicesPane%(2)
+	token$ = "HelpCC0"
+
+OTHERWISE
+	processed% = FALSE
+ENDCASE
+
+=processed%
 
 
 REM Open the Choices dialogue on screen.
@@ -191,5 +347,72 @@ poll_delay% = FNconfig_read_integer("Poll delay")
 text_colour% = FNconfig_read_integer("Foreground colour")
 background_colour% = FNconfig_read_integer("Background colour")
 shadow_colour% = FNconfig_read_integer("Shadow colour")
+ENDPROC
+
+
+REM Process a new font name for the font field. The name might be escaped, in
+REM which case we need to extract the actual name from the string first.
+REM
+REM \param font$		The new font name, as supplied by the font menu.
+
+DEF PROCchoices_font_menu_selection(font$)
+LOCAL index%
+
+index% = INSTR(font$, "\F")
+font$ = MID$(font$, index% + 2)
+index% = INSTR(font$, "\")
+IF index% <> 0 THEN font$ = LEFT$(font$, index% - 1)
+
+$FNicon_indirection(ChoicesPane%(1), 15) = font$
+PROCicon_redraw(ChoicesPane%(1), 15)
+ENDPROC
+
+
+REM Return the name of the currently selected font.
+REM
+REM \return			The name of the currently selected font.
+:
+DEF FNchoices_font_menu_selected
+=$FNicon_indirection(ChoicesPane%(1), 15)
+
+
+REM Process a selection from the colour window, by updating one of the
+REM icons in the chouces dialogue.
+REM
+REM \param colour%		The new colour selcted from the window.
+:
+DEF PROCchoices_colour_selection(colour%)
+PROCset_colour_icon(ChoicesPane%(1), ChoicesColourIcon%, colour%)
+PROCicon_redraw(ChoicesPane%(1), ChoicesColourIcon%)
+ENDPROC
+
+
+REM Redraw the list of ignored tasks in the ignore list pane.
+:
+DEF PROCchoices_redraw_ignore_list
+LOCAL x%, y%, more%, line%
+
+REM Set the font colours
+
+SYS "Wimp_TextOp", 0, 7, 1
+
+REM Go into the WIMP redraw loop.
+
+SYS "Wimp_RedrawWindow",,b% TO more%
+
+WHILE more%
+	REM Calculate the position of the top left of the ignore list window.
+
+	x% = b%!4 - b%!20
+	y% = b%!16 - b%!24-4
+
+	IF IgnoreTasks% > 0 THEN
+		FOR line% = 1 TO IgnoreTasks%
+			SYS "Wimp_TextOp", 2, IgnoreTaskNames$(line% - 1), -1, -1, x%, y% - (line% << 5)
+		NEXT line%
+	ENDIF
+
+	SYS "Wimp_GetRectangle",,b% TO more%
+ENDWHILE
 ENDPROC
 
