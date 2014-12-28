@@ -71,7 +71,7 @@ NextPoll% += poll_delay%
 
 CASE reason% OF
 	WHEN 0		: PROCidle_event
-	WHEN 1		: IF NOT FNchoices_process_redraw(b%) THEN PROCredraw_bubble
+	WHEN 1		: IF NOT FNignore_process_redraw(b%) THEN PROCredraw_bubble
 	WHEN 2		: SYS "Wimp_OpenWindow",, b%
 	WHEN 3		: SYS "Wimp_CloseWindow",, b%
 	WHEN 6		: PROCmouse_click
@@ -164,6 +164,7 @@ DEF PROCmouse_click
 REM Pass the event details around any code modules that might be interested.
 
 IF FNchoices_process_mouse(b%) THEN ENDPROC
+IF FNignore_process_mouse(b%) THEN ENDPROC
 
 REM If we're still here, try to handle the event directly.
 
@@ -382,6 +383,7 @@ DIM ind_area% ind_size%
 PROCtemplate_open(resources_path$+"Templates")
 :
 PROCchoices_initialise
+PROCignore_initialise
 :
 PROCtemplate_load("Panel",b%,ind_area%,ind_size%,-1)
 SYS "Wimp_CreateWindow",,b% TO bubble_window%
@@ -472,7 +474,7 @@ PROCchoices_sync
 :
 REM Set up the list of tasks to ignore.
 :
-PROCignore_initialise(TaskHandle%, task_name$)
+PROCignore_load_tasks(TaskHandle%, task_name$)
 :
 REM Find the font we need to display the text and get the size of the screen mode.
 :

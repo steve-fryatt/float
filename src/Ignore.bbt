@@ -21,16 +21,272 @@ REM OR CONDITIONS OF ANY KIND, either express or implied.
 REM
 REM See the Licence for the specific language governing
 REM permissions and limitations under the Licence.
+
+
+REM Initialise the ignore module.
+REM
+REM This must be called while the Templates file is open.
+REM
+REM \TODO -- This relies on the global b%!
 :
+DEF PROCignore_initialise
+LOCAL i%, ind_area%, ind_size%
+
+REM Allocate indirected data memory for the ignore windows.
+
+ind_size% = 32
+DIM ind_area% ind_size%
+
+PROCtemplate_load("IgnorePane", b%, ind_area%, ind_size%, -1)
+b%!84 = 0
+SYS "Wimp_CreateWindow",,b% TO IgnorePane%
+
+REM Take a copy of the icon definition in the template.
+
+DIM IgnoreIconDef% 31
+
+FOR i% = 0 TO 28 STEP 4
+	IgnoreIconDef%!i% = b%!(i% + 88)
+NEXT i%
+
+REM We can deal with this many tasks to ignore.
+
+IgnoreTaskListSize% = 255
+
+REM A list of task names and task handles for the live ignore list.
+
+DIM IgnoreTaskNames$(IgnoreTaskListSize%), IgnoreTaskHandles%(IgnoreTaskListSize%)
+IgnoreTasks% = 0
+
+REM A separate list is used to store the configuration window list, so that it doesn't
+REM affect the live list of tasks until the user confirms any changes.
+
+DIM IgnoreConfigNames$(IgnoreTaskListSize%), IgnoreConfigSelections%(IgnoreTaskListSize%)
+IgnoreConfigTasks% = 0
+ENDPROC
+
+
+REM Process redraw events in the ignore pane.
+REM
+REM \param  block%		Redraw Event data block.
+REM \return			TRUE if we handled the event; else FALSE.
 :
+DEF FNignore_process_redraw(block%)
+LOCAL more%, line%, height%, name%, length%
+
+REM If the window isn't the ignore pane, there's nothing for us to do.
+
+IF !block% <> IgnorePane% THEN =FALSE
+
+REM Find the redraw icon height, to allow us to draw the lines in the window
+REM correctly. The icons fill the available width in the pane.
+
+length% = 64
+name% = FNmem_stack(length%)
+
+height% = IgnoreIconDef%!12 - IgnoreIconDef%!4
+
+IgnoreIconDef%!0 = 0
+IgnoreIconDef%!20 = name%
+
+REM Go into the WIMP redraw loop.
+
+SYS "Wimp_RedrawWindow",,block% TO more%
+
+WHILE more%
+	IF IgnoreConfigTasks% > 0 THEN
+		FOR line% = 1 TO IgnoreConfigTasks%
+			IF name% <> 0 THEN $name% = IgnoreConfigNames$(line% - 1)
+			IgnoreIconDef%!4 = - line% * height%
+			IgnoreIconDef%!12 = IgnoreIconDef%!4 + height%
+			IF IgnoreConfigSelections%(line% - 1) THEN
+				IgnoreIconDef%!16 = IgnoreIconDef%!16 OR &200000
+			ELSE
+				IgnoreIconDef%!16 = IgnoreIconDef%!16 AND &FFDFFFFF
+			ENDIF
+			SYS "Wimp_PlotIcon",, IgnoreIconDef%
+		NEXT line%
+	ENDIF
+
+	SYS "Wimp_GetRectangle",,block% TO more%
+ENDWHILE
+
+PROCmem_free(name%)
+=TRUE
+
+
+REM Process mouse clicks in ignore windows.
+REM
+REM \param b%			Mouse Event data block.
+REM \return			TRUE if we handled the event; else FALSE.
 :
+DEF FNignore_process_mouse(b%)
+LOCAL processed%, block%, height%, icon%
+
+REM If this isn't the ignore pane, then there's nothing to handle.
+
+IF b%!12 <> IgnorePane% THEN =FALSE
+
+block% = FNmem_stack(64)
+IF block% = 0 THEN =TRUE
+
+!block% = IgnorePane%
+SYS "Wimp_GetWindowState",,block%
+
+height% = IgnoreIconDef%!12 - IgnoreIconDef%!4
+icon% = -(b%!4 - block%!16 + block%!24) DIV height%
+
+PROCmem_free(block%)
+
+REM If the icon is out of range, there's nothing more to do.
+
+IF icon% < 0 OR icon% >= IgnoreConfigTasks% THEN = TRUE
+
+REM Process Select and Adjust clicks on the window entries.
+
+CASE b%!8 OF
+WHEN 1
+	IgnoreConfigSelections%(icon%) = NOT IgnoreConfigSelections%(icon%)
+	PROCwindow_force_redraw(IgnorePane%) : REM \TODO -- Only redraw the affected line.
+WHEN 4
+	IgnoreConfigSelections%() = FALSE
+	IgnoreConfigSelections%(icon%) = TRUE
+	PROCwindow_force_redraw(IgnorePane%)
+ENDCASE
+
+=TRUE
+
+
+REM Get the window handle of the ignore list pane window.
+REM
+REM \return			The handle of the window.
 :
-REM ====================================================================================================================
-REM Task ignore list management
-REM ====================================================================================================================
+DEF FNignore_get_pane_handle
+=IgnorePane%
+
+
+REM Set the extent of the ignore list pane.
+REM
+REM \param items%		The number of items to be displayed in the pane.
 :
+DEF PROCignore_set_pane_extent(items%)
+LOCAL state%, height%
+
+REM Claim workspace for the SWIs.
+
+state% = FNmem_stack(64)
+IF state% = 0 THEN ENDPROC
+
+REM The height required for the items is the number of items times the icon height.
+
+height% = items% * (IgnoreIconDef%!12 - IgnoreIconDef%!4)
+
+REM Find the visible area of the pane, and make sure that the extent is sufficient
+REM to cover this.
+
+!state% = IgnorePane%
+SYS "Wimp_GetWindowState",,state%
+
+IF height% < (state%!16 - state%!8) THEN height% = state%!16 - state%!8
+
+REM Set the extent to the required width and height.
+
+state%!8 = state%!12 - state%!4
+state%!4 = -height%
+state%!0 = 0
+state%!12 = 0
+SYS "Wimp_SetExtent", IgnorePane%, state%
+
+PROCmem_free(state%)
+ENDPROC
+
+
+REM Add a task name to the list of tasks in the configuration pane. These names
+REM will not be added to the live list until the configuration is saved.
+REM
+REM Names are checked against the existing list, and duplicates will be rejected.
+REM
+REM \param name$		The name of the task to add.
 :
+DEF PROCignore_add_choices_task_name(name$)
+LOCAL search%, insert%, shuffle%
+
+REM If there's no space to add the name, give up.
+
+IF (IgnoreConfigTasks% > IgnoreTaskListSize%) OR (name$ = "") THEN ENDPROC
+
+REM The list is maintained in alphabetical order, so we only need to search
+REM until we're past the point of a possible match and we've also found the
+REM insertion point.
+
+search% = 0
+insert% = -1
+
+WHILE insert% = -1 AND search% < IgnoreConfigTasks%
+	IF FNstring_to_upper(name$) <= FNstring_to_upper(IgnoreConfigNames$(search%)) THEN insert% = search%
+	search% += 1
+ENDWHILE
+
+REM If the seatch ran off the end of the list, add the name to the end. Otherwise,
+REM if there was an exact match don't do anything; if there wasn't, shuffle things
+REM up to make space for the new name to go into the correct place in the list.
+
+IF insert% = -1 THEN
+	insert% = IgnoreConfigTasks%
+ELSE
+	IF FNstring_to_upper(name$) = FNstring_to_upper(IgnoreConfigNames$(insert%)) THEN ENDPROC
+
+	FOR shuffle% = IgnoreConfigTasks% - 1 TO insert% STEP -1
+		IgnoreConfigNames$(shuffle% + 1) = IgnoreConfigNames$(shuffle%)
+	NEXT shuffle%
+ENDIF
+
+REM Store the new name.
+
+IgnoreConfigNames$(insert%) = name$
+IgnoreConfigTasks% += 1
+PROCignore_set_pane_extent(IgnoreConfigTasks%)
+PROCwindow_force_redraw(IgnorePane%)
+ENDPROC
+
+
+REM Delete any selected entries from the ignore list.
 :
+DEF PROCignore_delete_choices_tasks
+LOCAL read%, write%, deleted%
+
+deleted% = 0
+write% = 0
+
+REM Work through the list of tasks, copying items to be retained into their
+REM new locations in the list.
+
+FOR read% = 0 TO IgnoreConfigTasks% - 1
+	IF NOT IgnoreConfigSelections%(read%) THEN
+		IF write% < read% THEN
+			IgnoreConfigNames$(write%) = IgnoreConfigNames$(read%)
+			IgnoreConfigSelections%(write%) = IgnoreConfigSelections%(read%)
+		ENDIF
+		write% += 1
+	ELSE
+		deleted% += 1
+	ENDIF
+NEXT read%
+
+REM If no items were deleted, there's nothing more to do...
+
+IF deleted% = 0 THEN ENDPROC
+
+REM ...otherwise update the item count, then resize and redraw the pane.
+
+IgnoreConfigTasks% -= deleted%
+PROCignore_set_pane_extent(IgnoreConfigTasks%)
+PROCwindow_force_redraw(IgnorePane%)
+ENDPROC
+
+
+
+
 REM Initialise the Ignore List, reading in the list of tasks which are to have
 REM their help messages ignored from the configuration and looking up the task
 REM handles for any which are currently running.
@@ -38,18 +294,13 @@ REM
 REM \param task_handle%		The handle of the parent Float task.
 REM \param task_name$		The name of the parent Float task.
 :
-DEF PROCignore_initialise(task_handle%, task_name$)
+DEF PROCignore_load_tasks(task_handle%, task_name$)
 
 LOCAL list$, next_task%, found%, info%, claim%
 
 claim% = 16
 info% = FNmem_stack(claim%)
 IF info% = 0 THEN ENDPROC
-
-REM We can deal with this many tasks to ignore.
-
-IgnoreTaskListSize%=255
-DIM IgnoreTaskNames$(IgnoreTaskListSize%), IgnoreTaskHandles%(IgnoreTaskListSize%)
 
 REM Oepn the file and take it one line at a time.
 
@@ -195,4 +446,10 @@ FOR loop% = 0 TO IgnoreTasks% - 1
 NEXT loop%
 
 =ignore%
+
+
+
+
+
+
 
