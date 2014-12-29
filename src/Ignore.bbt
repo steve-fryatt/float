@@ -257,12 +257,14 @@ ELSE
 
 	FOR shuffle% = IgnoreConfigTasks% - 1 TO insert% STEP -1
 		IgnoreConfigNames$(shuffle% + 1) = IgnoreConfigNames$(shuffle%)
+		IgnoreConfigSelections%(shuffle% + 1) = IgnoreConfigSelections%(shuffle%)
 	NEXT shuffle%
 ENDIF
 
 REM Store the new name.
 
 IgnoreConfigNames$(insert%) = name$
+IgnoreConfigSelections%(insert%) = FALSE
 IgnoreConfigTasks% += 1
 ENDPROC
 
@@ -294,7 +296,14 @@ REM If no items were deleted, there's nothing more to do...
 
 IF deleted% = 0 THEN ENDPROC
 
-REM ...otherwise update the item count, then resize and redraw the pane.
+REM ...otherwise clear any subsequent selections , update the item count, then
+REM resize and redraw the pane.
+
+WHILE write% < IgnoreConfigTasks%
+	IgnoreConfigNames$(write%) = ""
+	IgnoreConfigSelections%(write%) = FALSE
+	write% += 1
+ENDWHILE
 
 IgnoreConfigTasks% -= deleted%
 PROCignore_set_pane_extent
