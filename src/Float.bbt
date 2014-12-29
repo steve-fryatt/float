@@ -224,9 +224,14 @@ WHEN font_menu%
 	IF re_open_menu% THEN font_menu% = FNbuild_font_menu
 ENDCASE
 
-REM Re-open the menu if ADJUST was used.
+REM Re-open the menu if ADJUST was used, otherwise inform the menu library that
+REM it has closed.
 
-IF re_open_menu% THEN PROCmenu_create(FNmenu_current_handle, 0, 0)
+IF re_open_menu% THEN
+	PROCmenu_create(FNmenu_current_handle, 0, 0)
+ELSE
+	PROCmenu_closed
+ENDIF
 ENDPROC
 
 
@@ -259,6 +264,7 @@ WHEN &400C3
 
 WHEN &400C9
 	IF b%!20 = font_menu% THEN PROCdelete_font_menu
+	PROCmenu_closed
 
 WHEN &400CF
 	PROClose_font
