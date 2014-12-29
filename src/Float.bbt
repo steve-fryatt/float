@@ -474,7 +474,7 @@ PROCchoices_sync
 :
 REM Set up the list of tasks to ignore.
 :
-PROCignore_load_tasks(TaskHandle%, task_name$)
+PROCignore_load_tasks
 :
 REM Find the font we need to display the text and get the size of the screen mode.
 :

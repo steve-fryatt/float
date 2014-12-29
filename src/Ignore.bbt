@@ -52,11 +52,18 @@ NEXT i%
 REM We can deal with this many tasks to ignore.
 
 IgnoreTaskListSize% = 255
+IgnoreTaskHandleSize% = 255
 
-REM A list of task names and task handles for the live ignore list.
+REM A list of task names and task handles for the live ignore list. As it's possible
+REM for there to be multiple instances of a given task active at any time, the two
+REM arrays are not linked. The handle array is simply a list of handles that we're
+REM ignoring.
 
-DIM IgnoreTaskNames$(IgnoreTaskListSize%), IgnoreTaskHandles%(IgnoreTaskListSize%)
+DIM IgnoreTaskNames$(IgnoreTaskListSize%)
 IgnoreTasks% = 0
+
+DIM IgnoreTaskHandles%(IgnoreTaskHandleSize%)
+IgnoreHandles% = 0
 
 REM A separate list is used to store the configuration window list, so that it doesn't
 REM affect the live list of tasks until the user confirms any changes.
@@ -166,10 +173,8 @@ DEF FNignore_get_pane_handle
 
 
 REM Set the extent of the ignore list pane.
-REM
-REM \param items%		The number of items to be displayed in the pane.
 :
-DEF PROCignore_set_pane_extent(items%)
+DEF PROCignore_set_pane_extent
 LOCAL state%, height%
 
 REM Claim workspace for the SWIs.
@@ -179,7 +184,7 @@ IF state% = 0 THEN ENDPROC
 
 REM The height required for the items is the number of items times the icon height.
 
-height% = items% * (IgnoreIconDef%!12 - IgnoreIconDef%!4)
+height% = IgnoreConfigTasks% * (IgnoreIconDef%!12 - IgnoreIconDef%!4)
 
 REM Find the visible area of the pane, and make sure that the extent is sufficient
 REM to cover this.
@@ -201,6 +206,18 @@ PROCmem_free(state%)
 ENDPROC
 
 
+REM Add a task name to the list of tasks in the configuration pane, update the
+REM window extent and redraw the window.
+REM
+REM \param name$		The name of the task to add.
+:
+DEF PROCignore_add_choices_task_name(name$)
+PROCignore_add_choices_task(name$)
+PROCignore_set_pane_extent
+PROCwindow_force_redraw(IgnorePane%)
+ENDPROC
+
+
 REM Add a task name to the list of tasks in the configuration pane. These names
 REM will not be added to the live list until the configuration is saved.
 REM
@@ -208,7 +225,7 @@ REM Names are checked against the existing list, and duplicates will be rejected
 REM
 REM \param name$		The name of the task to add.
 :
-DEF PROCignore_add_choices_task_name(name$)
+DEF PROCignore_add_choices_task(name$)
 LOCAL search%, insert%, shuffle%
 
 REM If there's no space to add the name, give up.
@@ -245,8 +262,6 @@ REM Store the new name.
 
 IgnoreConfigNames$(insert%) = name$
 IgnoreConfigTasks% += 1
-PROCignore_set_pane_extent(IgnoreConfigTasks%)
-PROCwindow_force_redraw(IgnorePane%)
 ENDPROC
 
 
@@ -280,23 +295,33 @@ IF deleted% = 0 THEN ENDPROC
 REM ...otherwise update the item count, then resize and redraw the pane.
 
 IgnoreConfigTasks% -= deleted%
-PROCignore_set_pane_extent(IgnoreConfigTasks%)
+PROCignore_set_pane_extent
 PROCwindow_force_redraw(IgnorePane%)
 ENDPROC
 
 
+DEF PROCignore_fill_choices_window
+LOCAL i%
+
+IgnoreConfigTasks% = 0
+
+IF IgnoreTasks% > 0 THEN
+	FOR i% = 0 TO IgnoreTasks% - 1
+		PROCignore_add_choices_task(IgnoreTaskNames$(i%))
+	NEXT i%
+ENDIF
+
+PROCignore_set_pane_extent
+PROCwindow_force_redraw(IgnorePane%)
+ENDPROC
 
 
 REM Initialise the Ignore List, reading in the list of tasks which are to have
 REM their help messages ignored from the configuration and looking up the task
 REM handles for any which are currently running.
-REM
-REM \param task_handle%		The handle of the parent Float task.
-REM \param task_name$		The name of the parent Float task.
 :
-DEF PROCignore_load_tasks(task_handle%, task_name$)
-
-LOCAL list$, next_task%, found%, info%, claim%
+DEF PROCignore_load_tasks
+LOCAL list$, next_task%, info%, claim%
 
 claim% = 16
 info% = FNmem_stack(claim%)
@@ -314,38 +339,30 @@ WHILE IgnoreTasks% <= IgnoreTaskListSize% AND LEN(list$) > 1
 	IgnoreTaskNames$(IgnoreTasks%) = FNstring_trim(LEFT$(list$, INSTR(list$, ",") - 1))
 	list$ = MID$(list$, INSTR(list$, ",") + 1)
 
-	REM Look up the task in the list from the Task Manager and, if it is running, record its handle
-	REM for furture reference.  This task is made a special case since we haven't yet called
-	REM Wimp_Poll and so the task manager won't know about us yet.
+	REM Look up the task in the list from the Task Manager and, if it is
+	REM running, record its handle for furture reference.
+	REM
+	REM The Task Manager won't know about this instance of Float yet, but
+	REM we'll get a notification via a Message_TaskStarting soon.
 
-	IF FNstring_to_upper(IgnoreTaskNames$(IgnoreTasks%)) = FNstring_to_upper(task_name$) THEN
-		IgnoreTaskHandles%(IgnoreTasks%) = task_handle%
-	ELSE
-		next_task% = 0
-		found% = FALSE
+	next_task% = 0
 
-		REPEAT
-			SYS "TaskManager_EnumerateTasks", next_task%, info%, claim% TO next_task%
-			IF FNstring_to_upper(FNstring_read(info%!4)) = FNstring_to_upper(IgnoreTaskNames$(IgnoreTasks%)) THEN
-				IgnoreTaskHandles%(IgnoreTasks%) = !info%
-				found% = TRUE
-			ENDIF
-		UNTIL next_task% < 0 OR found%
-	ENDIF
+	REPEAT
+		SYS "TaskManager_EnumerateTasks", next_task%, info%, claim% TO next_task%
+		IF FNstring_to_upper(FNstring_read(info%!4)) = FNstring_to_upper(IgnoreTaskNames$(IgnoreTasks%)) THEN
+			PROCignore_add_handle(!info%)
+		ENDIF
+	UNTIL next_task% < 0
 
 	IgnoreTasks% += 1
 ENDWHILE
 
 PROCmem_free(info%)
+
+PROCignore_dump_task_list
 ENDPROC
-:
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
+
+
 REM Process the starting of a new task, by checking it against the list of
 REM configured tasks to see if it's one to be ignored and and recording its
 REM task handle if it is found.
@@ -354,8 +371,9 @@ REM \param task_handle%		The handle of the new task.
 REM \param task_name$		The name of the new task.
 :
 DEF PROCignore_task_starting(task_handle%, task_name$)
+LOCAL loop%, found%
 
-LOCAL loop%, found%, handle_space%
+*Report \GStarting... task_name$, task_handle%
 
 REM Loop through the list of task names to see if one matches the name sent.
 
@@ -364,42 +382,56 @@ found% = FALSE
 
 WHILE loop% <= IgnoreTaskListSize% AND loop% < IgnoreTasks% AND NOT found%
 	IF FNstring_to_upper(IgnoreTaskNames$(loop%)) = FNstring_to_upper(task_name$) THEN
-		REM One has matched, so flag this and start looking for a space in the task handle array.
-
 		found% = TRUE
-		handle_space% = -1
-
-		REM Count up through the array until an empty space is found or the end is reached.
-
-		FOR loop% = 0 TO IgnoreTasks% - 1
-			IF IgnoreTaskHandles%(loop%) = 0 AND handle_space% = -1 THEN handle_space% = loop%
-		NEXT loop%
-
-		REM Store the handle, either in the first space or at the end of the array.
-
-		IF handle_space% = -1 THEN handle_space% = IgnoreTasks% : IgnoreTasks% += 1
-		IgnoreTaskHandles%(handle_space%) = b%!4
+		PROCignore_add_handle(task_handle%)
 	ENDIF
 
 	loop% += 1
 ENDWHILE
+PROCignore_dump_task_list
 ENDPROC
+
+
+REM Add a task handle to the list of handles that we're ignoring messages from.
+REM The handle will be placed in the first gap in the handle list, or at the
+REM end of the list. If the handle is already listed, nothing is done.
+REM
+REM \param task_handle%		The handle to add to the list.
 :
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
+DEF PROCignore_add_handle(task_handle%)
+LOCAL loop%, found%, position%
+
+position% = -1
+found% = FALSE
+
+IF IgnoreHandles% = 0 THEN
+	position% = 0
+	IgnoreHandles% += 1
+ELSE
+	FOR loop% = 0 TO IgnoreHandles% - 1
+		IF IgnoreTaskHandles%(loop%) = 0 AND position% = -1 THEN position% = loop%
+		IF IgnoreTaskHandles%(loop%) = task_handle% THEN found% = TRUE
+	NEXT loop%
+
+	IF position% = -1 AND IgnoreHandles% <= IgnoreTaskHandleSize% THEN
+		position% = IgnoreHandles%
+		IgnoreHandles% += 1
+	ENDIF
+ENDIF
+
+IF found% = FALSE AND position% <> -1 THEN IgnoreTaskHandles%(position%) = task_handle%
+ENDPROC
+
+
 REM Process the quitting of a task, removing it from the list of task handles
 REM and shrinking the list if possible.
 REM
 REM \param task_handle%		The handle of the task which has quit.
 :
 DEF PROCignore_task_quitting(task_handle%)
-
 LOCAL loop%, zero%
+
+*Report \RQuitting... task_handle%
 
 REM Scan backwards through the list of task handles.  When a matching handle is found, zero it.
 REM While all the handles have been zero, continue to reduce the count of the handles contained in
@@ -407,22 +439,17 @@ REM the list.
 
 zero% = TRUE
 
-IF IgnoreTasks% = 0 THEN ENDPROC
+IF IgnoreHandles% = 0 THEN ENDPROC
 
-FOR loop% = IgnoreTasks% - 1 TO 0 STEP -1
+FOR loop% = IgnoreHandles% - 1 TO 0 STEP -1
 	IF IgnoreTaskHandles%(loop%) = task_handle% THEN IgnoreTaskHandles%(loop%) = 0
 	IF IgnoreTaskHandles%(loop%) <> 0 THEN zero% = FALSE
-	IF zero% THEN IgnoreTasks% = loop%
+	IF zero% THEN IgnoreHandles% = loop%
 NEXT loop%
+PROCignore_dump_task_list
 ENDPROC
-:
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
+
+
 REM Check the list of running tasks, returning TRUE if the task handle is
 REM included in the list of tasks to be ignored.
 REM
@@ -435,13 +462,13 @@ LOCAL loop%, ignore%
 
 REM If there are no tasks in the list, the task can't be ignored!
 
-IF IgnoreTasks% = 0 THEN =FALSE
+IF IgnoreHandles% = 0 THEN =FALSE
 
 REM Scan the list of task handles to see if one matches; set the ignore flag is so.
 
 ignore% = FALSE
 
-FOR loop% = 0 TO IgnoreTasks% - 1
+FOR loop% = 0 TO IgnoreHandles% - 1
 	IF IgnoreTaskHandles%(loop%) = task_handle% THEN ignore% = TRUE
 NEXT loop%
 
@@ -449,6 +476,22 @@ NEXT loop%
 
 
 
+DEF PROCignore_dump_task_list
+LOCAL i%
+
+*Report IgnoreTasks%
+
+IF IgnoreTasks% > 0 THEN
+	FOR i% = 0 TO IgnoreTasks% - 1
+		*Report IgnoreTaskNames$(i%)
+	NEXT i%
+ENDIF
+IF IgnoreHandles% > 0 THEN
+	FOR i% = 0 TO IgnoreHandles% - 1
+		*Report ~IgnoreTaskHandles%(i%)
+	NEXT i%
+ENDIF
+ENDPROC
 
 
 

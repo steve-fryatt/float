@@ -243,7 +243,8 @@ PROCset_colour_icon(ChoicesPane%(1), 4, text_colour%)
 PROCset_colour_icon(ChoicesPane%(1), 7, background_colour%)
 PROCset_colour_icon(ChoicesPane%(1), 10, shadow_colour%)
 
-$FNicon_indirection(ChoicesPane%(2), 3) = "Wibble"
+$FNicon_indirection(ChoicesPane%(2), 3) = ""
+PROCignore_fill_choices_window
 
 IF x% >= 0 AND y% >= 0 THEN
 	ChoicesCurrentPane% = 0
@@ -266,6 +267,7 @@ ChoicesCurrentPane% = pane%
 PROCwindow_open_nested_in_icon(ChoicesPane%(ChoicesCurrentPane%), ChoicesWindow%, 3, 0, -1)
 IF ChoicesCurrentPane% = 2 THEN
 	PROCwindow_open_nested_in_icon(FNignore_get_pane_handle, ChoicesPane%(ChoicesCurrentPane%), 2, 44, -1)
+	PROCignore_set_pane_extent
 ENDIF
 ENDPROC
 
