@@ -163,6 +163,35 @@ ENDCASE
 
 
 
+REM Process key presses in choices windows.
+REM
+REM \param block%		Keypress Event data block.
+REM \return			TRUE if we handled the event; else FALSE.
+:
+DEF FNchoices_process_keypress(block%)
+LOCAL processed%
+
+IF !block% <> ChoicesWindow% AND !block% <> ChoicesPane%(0) AND !block% <> ChoicesPane%(1) AND !block% <> ChoicesPane%(2) THEN =FALSE
+
+processed% = TRUE
+
+CASE block%!24 OF
+WHEN 13
+	PROCchoices_close_window(TRUE, FALSE)
+
+WHEN 27
+	PROCwindow_close(ChoicesWindow%)
+	PROCwindow_close(ChoicesPane%(ChoicesCurrentPane%))
+
+OTHERWISE
+	processed% = FALSE
+
+ENDCASE
+
+=processed%
+
+
+
 REM Return interactive help message tokens for parts of the Choices dialogue.
 REM
 REM \param b%			The message block from Message_HelpRequest.

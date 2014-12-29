@@ -76,7 +76,7 @@ CASE reason% OF
 	WHEN 2		: SYS "Wimp_OpenWindow",, b%
 	WHEN 3		: SYS "Wimp_CloseWindow",, b%
 	WHEN 6		: PROCmouse_click
-	WHEN 8		: SYS "Wimp_ProcessKey", b%!24
+	WHEN 8		: PROCkeypress_handler(b%)
 	WHEN 9		: PROCmenu_selection
 	WHEN 17, 18	: PROCwimp_message
 	WHEN 19		: PROCbounced_message
@@ -188,6 +188,20 @@ WHEN colours_window%
 WHEN prog_info_window%
 	IF b%!16 = 8 THEN PROCurl_launch(FNmessage_lookup("SupportURL")) : PROCmenu_create(-1,0,0)
 ENDCASE
+ENDPROC
+
+
+REM Respond to keypress events from the Wimp.
+REM
+REM \param block%		Pointer to the keypress event block.
+:
+DEF PROCkeypress_handler(block%)
+
+REM Pass the event details around to any code modules that might be interested.
+
+IF FNchoices_process_keypress(block%) THEN ENDPROC
+
+SYS "Wimp_ProcessKey", block%!24
 ENDPROC
 
 
