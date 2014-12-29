@@ -73,6 +73,8 @@ IgnoreConfigTasks% = 0
 ENDPROC
 
 
+
+
 REM Process redraw events in the ignore pane.
 REM
 REM \param  block%		Redraw Event data block.
@@ -124,6 +126,8 @@ PROCmem_free(name%)
 =TRUE
 
 
+
+
 REM Process mouse clicks in ignore windows.
 REM
 REM \param b%			Mouse Event data block.
@@ -164,6 +168,8 @@ WHEN 4
 ENDCASE
 
 =TRUE
+
+
 
 
 REM Get the window handle of the ignore list pane window.
@@ -208,6 +214,8 @@ PROCmem_free(state%)
 ENDPROC
 
 
+
+
 REM Add a task name to the list of tasks in the configuration pane, update the
 REM window extent and redraw the window.
 REM
@@ -218,6 +226,8 @@ PROCignore_add_choices_task(name$)
 PROCignore_set_pane_extent
 PROCwindow_force_redraw(IgnorePane%)
 ENDPROC
+
+
 
 
 REM Add a task name to the list of tasks in the configuration pane. These names
@@ -269,6 +279,8 @@ IgnoreConfigTasks% += 1
 ENDPROC
 
 
+
+
 REM Delete any selected entries from the ignore list.
 :
 DEF PROCignore_delete_choices_tasks
@@ -311,6 +323,8 @@ PROCwindow_force_redraw(IgnorePane%)
 ENDPROC
 
 
+
+
 REM Fill the Choices window data structures, to set or reset the contents of the
 REM dialogue ready for editing.
 :
@@ -330,6 +344,8 @@ PROCwindow_force_redraw(IgnorePane%)
 ENDPROC
 
 
+
+
 REM Save the contents of the Choices window data structures back to the live
 REM structures.
 :
@@ -346,6 +362,8 @@ ENDIF
 PROCconfig_set_string("Ignore tasks", string$)
 PROCignore_load_tasks
 ENDPROC
+
+
 
 
 REM Initialise the Ignore List, reading in the list of tasks which are to have
@@ -400,6 +418,7 @@ PROCmem_free(info%)
 ENDPROC
 
 
+
 REM Process the starting of a new task, by checking it against the list of
 REM configured tasks to see if it's one to be ignored and and recording its
 REM task handle if it is found.
@@ -424,6 +443,8 @@ WHILE loop% <= IgnoreTaskListSize% AND loop% < IgnoreTasks% AND NOT found%
 	loop% += 1
 ENDWHILE
 ENDPROC
+
+
 
 
 REM Add a task handle to the list of handles that we're ignoring messages from.
@@ -460,6 +481,8 @@ ENDIF
 ENDPROC
 
 
+
+
 REM Process the quitting of a task, removing it from the list of task handles
 REM and shrinking the list if possible.
 REM
@@ -489,6 +512,8 @@ NEXT loop%
 ENDPROC
 
 
+
+
 REM Check the list of running tasks, returning TRUE if the task handle is
 REM included in the list of tasks to be ignored.
 REM
@@ -511,6 +536,8 @@ FOR loop% = 0 TO IgnoreHandles% - 1
 NEXT loop%
 
 =ignore%
+
+
 
 
 REM Dump the contents of the task name and handle lists to Reporter, for

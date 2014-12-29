@@ -59,6 +59,8 @@ ChoicesColourIcon% = 0
 ENDPROC
 
 
+
+
 REM Process mouse clicks in choices windows.
 REM
 REM \param b%			Mouse Event data block.
@@ -143,6 +145,8 @@ ENDCASE
 =processed%
 
 
+
+
 REM Return interactive help message tokens for parts of the Choices dialogue.
 REM
 REM \param b%			The message block from Message_HelpRequest.
@@ -209,6 +213,8 @@ ENDCASE
 =processed%
 
 
+
+
 REM Open the Choices dialogue on screen.
 REM
 REM \param x%			The X coordinate to open the dialogue at.
@@ -255,6 +261,8 @@ IF x% >= 0 AND y% >= 0 THEN
 	PROCchoices_open_pane(0)
 ENDIF
 ENDPROC
+
+
 
 
 REM Open a pane of the Choices dialogue, nesting it in the appropriate place
@@ -359,6 +367,8 @@ shadow_colour% = FNconfig_read_integer("Shadow colour")
 ENDPROC
 
 
+
+
 REM Process a new font name for the font field. The name might be escaped, in
 REM which case we need to extract the actual name from the string first.
 REM
@@ -377,12 +387,16 @@ PROCicon_redraw(ChoicesPane%(1), 15)
 ENDPROC
 
 
+
+
 REM Return the name of the currently selected font.
 REM
 REM \return			The name of the currently selected font.
 :
 DEF FNchoices_font_menu_selected
 =$FNicon_indirection(ChoicesPane%(1), 15)
+
+
 
 
 REM Process a selection from the colour window, by updating one of the
@@ -394,6 +408,4 @@ DEF PROCchoices_colour_selection(colour%)
 PROCset_colour_icon(ChoicesPane%(1), ChoicesColourIcon%, colour%)
 PROCicon_redraw(ChoicesPane%(1), ChoicesColourIcon%)
 ENDPROC
-
-
 
