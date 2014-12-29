@@ -237,6 +237,13 @@ WHEN FontMenu%
 WHEN TaskMenu%
 	PROCchoices_task_menu_selection(FNtaskmenu_decode(!b%))
 
+	REM NB. Reopening the menu relies on the fact that we do not bother
+	REM rebuilding the menu (because there's no tick, and we ignore the
+	REM possibility that a task might have started in the meantime). If the
+	REM menu were re-built via a call to FNtaskmenu_build, the base address
+	REM of the menu could move which would break the Wimp as it would no
+	REM longer be seen as the "same" menu.
+
 	IF NOT re_open_menu% THEN
 		PROCtaskmenu_delete
 		TaskMenu% = 0
