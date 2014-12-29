@@ -303,6 +303,8 @@ PROCconfig_set_real("Foreground colour", FNicon_background_colour(ChoicesPane%(1
 PROCconfig_set_real("Background colour", FNicon_background_colour(ChoicesPane%(1), 7))
 PROCconfig_set_real("Shadow colour", FNicon_background_colour(ChoicesPane%(1), 10))
 :
+PROCignore_save_choices_window
+:
 PROCchoices_sync
 PROClose_font
 PROCfind_font

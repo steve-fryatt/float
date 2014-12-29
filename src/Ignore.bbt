@@ -300,6 +300,9 @@ PROCwindow_force_redraw(IgnorePane%)
 ENDPROC
 
 
+REM Fill the Choices window data structures, to set or reset the contents of the
+REM dialogue ready for editing.
+:
 DEF PROCignore_fill_choices_window
 LOCAL i%
 
@@ -313,6 +316,24 @@ ENDIF
 
 PROCignore_set_pane_extent
 PROCwindow_force_redraw(IgnorePane%)
+ENDPROC
+
+
+REM Save the contents of the Choices window data structures back to the live
+REM structures.
+:
+DEF PROCignore_save_choices_window
+LOCAL loop%, string$
+
+IF IgnoreConfigTasks% > 0 THEN
+	FOR loop% = 0 TO IgnoreConfigTasks% - 1
+		IF LEN(string$) > 0 THEN string$ += ","
+		string$ += IgnoreConfigNames$(loop%)
+	NEXT loop%
+ENDIF
+
+PROCconfig_set_string("Ignore tasks", string$)
+PROCignore_load_tasks
 ENDPROC
 
 
