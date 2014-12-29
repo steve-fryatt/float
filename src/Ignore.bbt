@@ -62,7 +62,7 @@ REM ignoring.
 DIM IgnoreTaskNames$(IgnoreTaskListSize%)
 IgnoreTasks% = 0
 
-DIM IgnoreTaskHandles%(IgnoreTaskHandleSize%)
+DIM IgnoreTaskHandles%(IgnoreTaskHandleSize%), IgnoreHandleLinks%(IgnoreTaskHandleSize%)
 IgnoreHandles% = 0
 
 REM A separate list is used to store the configuration window list, so that it doesn't
@@ -327,11 +327,18 @@ claim% = 16
 info% = FNmem_stack(claim%)
 IF info% = 0 THEN ENDPROC
 
+REM Reset all of the data.
+
+IgnoreTaskNames$() = ""
+IgnoreTasks% = 0
+
+IgnoreTaskHandles%() = 0
+IgnoreHandleLinks%() = -1
+IgnoreHandles% = 0
+
 REM Oepn the file and take it one line at a time.
 
 list$ = FNconfig_read_string("Ignore tasks") + ","
-
-IgnoreTasks% = 0
 
 WHILE IgnoreTasks% <= IgnoreTaskListSize% AND LEN(list$) > 1
 	REM Get the next task name.
@@ -350,7 +357,7 @@ WHILE IgnoreTasks% <= IgnoreTaskListSize% AND LEN(list$) > 1
 	REPEAT
 		SYS "TaskManager_EnumerateTasks", next_task%, info%, claim% TO next_task%
 		IF FNstring_to_upper(FNstring_read(info%!4)) = FNstring_to_upper(IgnoreTaskNames$(IgnoreTasks%)) THEN
-			PROCignore_add_handle(!info%)
+			PROCignore_add_handle(!info%, IgnoreTasks%)
 		ENDIF
 	UNTIL next_task% < 0
 
@@ -358,8 +365,6 @@ WHILE IgnoreTasks% <= IgnoreTaskListSize% AND LEN(list$) > 1
 ENDWHILE
 
 PROCmem_free(info%)
-
-PROCignore_dump_task_list
 ENDPROC
 
 
@@ -373,8 +378,6 @@ REM \param task_name$		The name of the new task.
 DEF PROCignore_task_starting(task_handle%, task_name$)
 LOCAL loop%, found%
 
-*Report \GStarting... task_name$, task_handle%
-
 REM Loop through the list of task names to see if one matches the name sent.
 
 loop% = 0
@@ -383,12 +386,11 @@ found% = FALSE
 WHILE loop% <= IgnoreTaskListSize% AND loop% < IgnoreTasks% AND NOT found%
 	IF FNstring_to_upper(IgnoreTaskNames$(loop%)) = FNstring_to_upper(task_name$) THEN
 		found% = TRUE
-		PROCignore_add_handle(task_handle%)
+		PROCignore_add_handle(task_handle%, loop%)
 	ENDIF
 
 	loop% += 1
 ENDWHILE
-PROCignore_dump_task_list
 ENDPROC
 
 
@@ -398,7 +400,7 @@ REM end of the list. If the handle is already listed, nothing is done.
 REM
 REM \param task_handle%		The handle to add to the list.
 :
-DEF PROCignore_add_handle(task_handle%)
+DEF PROCignore_add_handle(task_handle%, name_index%)
 LOCAL loop%, found%, position%
 
 position% = -1
@@ -419,7 +421,10 @@ ELSE
 	ENDIF
 ENDIF
 
-IF found% = FALSE AND position% <> -1 THEN IgnoreTaskHandles%(position%) = task_handle%
+IF found% = FALSE AND position% <> -1 THEN
+	IgnoreTaskHandles%(position%) = task_handle%
+	IgnoreHandleLinks%(position%) = name_index%
+ENDIF
 ENDPROC
 
 
@@ -431,22 +436,24 @@ REM \param task_handle%		The handle of the task which has quit.
 DEF PROCignore_task_quitting(task_handle%)
 LOCAL loop%, zero%
 
-*Report \RQuitting... task_handle%
-
-REM Scan backwards through the list of task handles.  When a matching handle is found, zero it.
-REM While all the handles have been zero, continue to reduce the count of the handles contained in
-REM the list.
+REM Scan backwards through the list of task handles so that we can also use this
+REM scan to reduce the size of the list.  When a matching handle is found, zero it.
+REM While all the handles seen have been zero, continue to reduce the count of the
+REM handles contained in the list so as to speed up future searches.
 
 zero% = TRUE
 
 IF IgnoreHandles% = 0 THEN ENDPROC
 
 FOR loop% = IgnoreHandles% - 1 TO 0 STEP -1
-	IF IgnoreTaskHandles%(loop%) = task_handle% THEN IgnoreTaskHandles%(loop%) = 0
+	IF IgnoreTaskHandles%(loop%) = task_handle% THEN
+		IgnoreTaskHandles%(loop%) = 0
+		IgnoreHandleLinks%(loop%) = -1
+	ENDIF
+
 	IF IgnoreTaskHandles%(loop%) <> 0 THEN zero% = FALSE
 	IF zero% THEN IgnoreHandles% = loop%
 NEXT loop%
-PROCignore_dump_task_list
 ENDPROC
 
 
@@ -457,14 +464,13 @@ REM \param task_handle%		The task handle to check.
 REM \return			TRUE if the task is to be ignored; else FALSE.
 :
 DEF FNignore_task(task_handle%)
-
 LOCAL loop%, ignore%
 
 REM If there are no tasks in the list, the task can't be ignored!
 
 IF IgnoreHandles% = 0 THEN =FALSE
 
-REM Scan the list of task handles to see if one matches; set the ignore flag is so.
+REM Scan the list of task handles to see if one matches; set the ignore flag if so.
 
 ignore% = FALSE
 
@@ -475,7 +481,11 @@ NEXT loop%
 =ignore%
 
 
-
+REM Dump the contents of the task name and handle lists to Reporter, for
+REM debugging. This isn't normally used anywhere.
+REM
+REM \TODO -- This can be removed once development is complete.
+:
 DEF PROCignore_dump_task_list
 LOCAL i%
 
@@ -488,11 +498,8 @@ IF IgnoreTasks% > 0 THEN
 ENDIF
 IF IgnoreHandles% > 0 THEN
 	FOR i% = 0 TO IgnoreHandles% - 1
-		*Report ~IgnoreTaskHandles%(i%)
+		*Report ~IgnoreTaskHandles%(i%), IgnoreHandleLinks%(i%)
 	NEXT i%
 ENDIF
 ENDPROC
-
-
-
 
