@@ -67,12 +67,26 @@ REM \param b%			Mouse Event data block.
 REM \return			TRUE if we handled the event; else FALSE.
 :
 DEF FNchoices_process_mouse(b%)
-LOCAL processed%, block%
+LOCAL processed%, block%, caret%, caret_present%, caret_icon%
 
 processed% = TRUE
 
+REM Handle the mouse click.
+
 CASE b%!12 OF
 WHEN ChoicesWindow%
+	REM Find out if we already have the caret in the window.
+
+	caret% = FNmem_stack(24)
+	IF caret% = 0 THEN
+		caret_present% = FALSE
+	ELSE
+		SYS "Wimp_GetCaretPosition",,caret%
+		caret_present% = (!caret% = ChoicesWindow%) OR (!caret% = ChoicesPane%(ChoicesCurrentPane%))
+		caret_icon% = caret%!4
+		PROCmem_free(caret%)
+	ENDIF
+
 	CASE b%!8 OF
 	WHEN 4 : REM Select
 		CASE b%!16 OF
@@ -85,15 +99,14 @@ WHEN ChoicesWindow%
 			PROCchoices_close_window(TRUE, FALSE)
 		WHEN 4, 5, 6
 			PROCwindow_close(ChoicesPane%(ChoicesCurrentPane%))
-			PROCchoices_open_pane(b%!16 - 4)
+			PROCchoices_open_pane(b%!16 - 4, caret_present%)
 		ENDCASE
 	WHEN 1 : REM Adjust
 		CASE b%!16 OF
 		WHEN 0
 			PROCchoices_open_window(-1, -1)
 			PROCwindow_force_redraw(ChoicesWindow%)
-			SYS "Wimp_GetCaretPosition",, q%
-			IF !q% = ChoicesPane%(ChoicesCurrentPane%) THEN PROCicon_put_caret_at_end(ChoicesPane%(ChoicesCurrentPane%), q%!4)
+			IF caret_present% THEN PROCicon_put_caret_at_end(ChoicesPane%(ChoicesCurrentPane%), caret_icon%)
 		WHEN 1
 			PROCchoices_close_window(FALSE, TRUE)
 		WHEN 2
@@ -101,7 +114,7 @@ WHEN ChoicesWindow%
 		WHEN 4, 5, 6
 			PROCicon_set_selected(ChoicesWindow%, b%!16, TRUE)
 			PROCwindow_close(ChoicesPane%(ChoicesCurrentPane%))
-			PROCchoices_open_pane(b%!16 - 4)
+			PROCchoices_open_pane(b%!16 - 4, caret_present%)
 		ENDCASE
 	ENDCASE
 
@@ -261,7 +274,7 @@ IF x% >= 0 AND y% >= 0 THEN
 		PROCicon_set_selected(ChoicesWindow%, 4 + loop%, (loop% = ChoicesCurrentPane%))
 	NEXT loop%
 	PROCwindow_open_centred_at(ChoicesWindow%, x%, y%)
-	PROCchoices_open_pane(0)
+	PROCchoices_open_pane(0, TRUE)
 ENDIF
 ENDPROC
 
@@ -272,13 +285,26 @@ REM Open a pane of the Choices dialogue, nesting it in the appropriate place
 REM in the parent window. If the pane has sub-panes, open those nested as well.
 REM
 REM \param pane%		The index number of the pane to be opened.
+REM \param place_caret%		TRUE to place the caret in the first writable
+REM				icon; FALSE to do nothing.
 :
-DEF PROCchoices_open_pane(pane%)
+DEF PROCchoices_open_pane(pane%, place_caret%)
 ChoicesCurrentPane% = pane%
+
 PROCwindow_open_nested_in_icon(ChoicesPane%(ChoicesCurrentPane%), ChoicesWindow%, 3, 0, -1)
 IF ChoicesCurrentPane% = 2 THEN
 	PROCwindow_open_nested_in_icon(FNignore_get_pane_handle, ChoicesPane%(ChoicesCurrentPane%), 2, 44, -1)
 	PROCignore_set_pane_extent
+ENDIF
+
+REM Replace the caret if we need to.
+
+IF place_caret% THEN
+	CASE ChoicesCurrentPane% OF
+		WHEN 0 : PROCicon_put_caret_at_end(ChoicesPane%(0), 7)
+		WHEN 1 : PROCicon_put_caret_at_end(ChoicesPane%(1), 19)
+		WHEN 2 : PROCicon_put_caret_at_end(ChoicesPane%(2), 3)
+	ENDCASE
 ENDIF
 ENDPROC
 
