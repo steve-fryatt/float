@@ -100,6 +100,8 @@ REM Go into the WIMP redraw loop.
 
 SYS "Wimp_RedrawWindow",,block% TO more%
 
+IgnoreIconDef%!8 = IgnoreIconDef%!0 + block%!12 - block%!4
+
 WHILE more%
 	IF IgnoreConfigTasks% > 0 THEN
 		FOR line% = 1 TO IgnoreConfigTasks%
