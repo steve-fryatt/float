@@ -371,7 +371,7 @@ REM their help messages ignored from the configuration and looking up the task
 REM handles for any which are currently running.
 :
 DEF PROCignore_load_tasks
-LOCAL list$, next_task%, info%, claim%
+LOCAL list$, next_task%, info%, claim%, end%
 
 claim% = 16
 info% = FNmem_stack(claim%)
@@ -405,9 +405,11 @@ WHILE IgnoreTasks% <= IgnoreTaskListSize% AND LEN(list$) > 1
 	next_task% = 0
 
 	REPEAT
-		SYS "TaskManager_EnumerateTasks", next_task%, info%, claim% TO next_task%
-		IF FNstring_to_upper(FNstring_read(info%!4)) = FNstring_to_upper(IgnoreTaskNames$(IgnoreTasks%)) THEN
-			PROCignore_add_handle(!info%, IgnoreTasks%)
+		SYS "TaskManager_EnumerateTasks", next_task%, info%, claim% TO next_task%, end%
+		IF end% = info% + claim% THEN
+			IF FNstring_to_upper(FNstring_read(info%!4)) = FNstring_to_upper(IgnoreTaskNames$(IgnoreTasks%)) THEN
+				PROCignore_add_handle(!info%, IgnoreTasks%)
+			ENDIF
 		ENDIF
 	UNTIL next_task% < 0
 

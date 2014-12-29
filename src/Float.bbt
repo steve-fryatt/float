@@ -37,6 +37,7 @@ LIBRARY "src/Choices.bbt"
 LIBRARY "src/Code.bbt"
 LIBRARY "src/Ignore.bbt"
 LIBRARY "src/Mem.bbt"
+LIBRARY "src/TaskMenu.bbt"
 
 REM These values get replaced by tokenize.
 
@@ -174,8 +175,8 @@ WHEN -2
 	WHEN 4
 		PROCset_help_state(NOT display_bubbles%)
 	WHEN 2
-		PROCmenu_set_state(icon_bar_menu%, 3, show_all_help%, FALSE)
-		PROCmenu_create_iconbar(icon_bar_menu%, !b%)
+		PROCmenu_set_state(IconbarMenu%, 3, show_all_help%, FALSE)
+		PROCmenu_create_iconbar(IconbarMenu%, !b%)
 	WHEN 1
 		PROCchoices_open_window(!b%, b%!4)
 	ENDCASE
@@ -203,7 +204,7 @@ re_open_menu% = (q%!8 = 1)
 REM Act on the menu choice.
 
 CASE FNmenu_current_handle OF
-WHEN icon_bar_menu%
+WHEN IconbarMenu%
 	CASE !b% OF
 	WHEN 1
 		OSCLI("%Filer_Run Float:!Help")
@@ -211,17 +212,35 @@ WHEN icon_bar_menu%
 		PROCchoices_open_window(!q%, q%!4)
 	WHEN 3
 		show_all_help% = NOT show_all_help%
-		PROCmenu_set_state(icon_bar_menu%, 3, show_all_help%, FALSE)
+		PROCmenu_set_state(IconbarMenu%, 3, show_all_help%, FALSE)
 	WHEN 4
 		quit%=TRUE
 	ENDCASE
 
-WHEN font_menu%
-	SYS "Font_DecodeMenu", 0, font_menu%, b%, q%, 255
+WHEN FontMenu%
+	SYS "Font_DecodeMenu", 0, FontMenu%, b%, q%, 255
 	SYS "XOS_GenerateError", q% TO font_name$
 	PROCchoices_font_menu_selection(font_name$)
+
+	REM NB. This relies on the fact that FNbuild_font_menu will always return
+	REM the same address, as it claims the shared pool from the end of the
+	REM WimpSlot. If the value returned could ever change, the Adjust-click
+	REM support would break messily.
+
 	PROCdelete_font_menu
-	IF re_open_menu% THEN font_menu% = FNbuild_font_menu
+	IF re_open_menu% THEN
+		FontMenu% = FNbuild_font_menu
+	ELSE
+		FontMenu% = 0
+	ENDIF
+
+WHEN TaskMenu%
+	PROCchoices_task_menu_selection(FNtaskmenu_decode(!b%))
+
+	IF NOT re_open_menu% THEN
+		PROCtaskmenu_delete
+		TaskMenu% = 0
+	ENDIF
 ENDCASE
 
 REM Re-open the menu if ADJUST was used, otherwise inform the menu library that
@@ -263,7 +282,14 @@ WHEN &400C3
 	PROCignore_task_quitting(b%!4)
 
 WHEN &400C9
-	IF b%!20 = font_menu% THEN PROCdelete_font_menu
+	CASE b%!20 OF
+	WHEN FontMenu%
+		PROCdelete_font_menu
+		FontMenu% = 0
+	WHEN TaskMenu%
+		PROCtaskmenu_delete
+		TaskMenu% = 0
+	ENDCASE
 	PROCmenu_closed
 
 WHEN &400CF
@@ -390,6 +416,7 @@ PROCtemplate_open(resources_path$+"Templates")
 :
 PROCchoices_initialise
 PROCignore_initialise
+PROCtaskmenu_initialise
 :
 PROCtemplate_load("Panel",b%,ind_area%,ind_size%,-1)
 SYS "Wimp_CreateWindow",,b% TO bubble_window%
@@ -412,8 +439,9 @@ REM Load the menu definitions into memory and create the menus.
 PROCmenu_initialise
 !q%=prog_info_window%
 PROCmenu_load_templates(resources_path$+"Menus",q%)
-icon_bar_menu%=!q%
-font_menu%=0
+IconbarMenu% = !q%
+FontMenu% = 0
+TaskMenu% = 0
 :
 REM Set up all the global variables
 :
@@ -574,10 +602,12 @@ IF NOT processed% THEN
 	OTHERWISE
 		SYS "Wimp_GetMenuState", 1, q%, b%!32, b%!36
 		CASE FNmenu_current_handle OF
-		WHEN icon_bar_menu%
+		WHEN IconbarMenu%
 			IF !q% > -1 THEN token$ = "Menu0" + STR$(!q% + 1)
-		WHEN font_menu%
+		WHEN FontMenu%
 			IF !q% > -1 THEN token$ = "MenuFF"
+		WHEN TaskMenu%
+			IF !q% > -1 THEN token$ = "MenuTT"
 		ENDCASE
 	ENDCASE
 ENDIF

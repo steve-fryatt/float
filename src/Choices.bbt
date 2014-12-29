@@ -122,8 +122,8 @@ WHEN ChoicesPane%(1)
 			PROCmenu_create_popup(colours_window%, ChoicesPane%(1), b%!16)
 			ChoicesColourIcon% = b%!16 - 1
 		WHEN 14
-			font_menu% = FNbuild_font_menu
-			PROCmenu_create_popup(font_menu%, ChoicesPane%(1), 15)
+			FontMenu% = FNbuild_font_menu
+			PROCmenu_create_popup(FontMenu%, ChoicesPane%(1), 15)
 		ENDCASE
 	ENDCASE
 
@@ -131,6 +131,9 @@ WHEN ChoicesPane%(2)
 	CASE b%!8 OF
 	WHEN 4 : REM Select
 		CASE b%!16 OF
+		WHEN 4
+			TaskMenu% = FNtaskmenu_build
+			IF TaskMenu% <> 0 THEN PROCmenu_create_popup(TaskMenu%, ChoicesPane%(2), 4)
 		WHEN 5
 			PROCignore_add_choices_task_name($FNicon_indirection(ChoicesPane%(2), 3))
 		WHEN 6
@@ -384,6 +387,20 @@ IF index% <> 0 THEN font$ = LEFT$(font$, index% - 1)
 
 $FNicon_indirection(ChoicesPane%(1), 15) = font$
 PROCicon_redraw(ChoicesPane%(1), 15)
+ENDPROC
+
+
+
+
+REM Process a new task name for the task name field.
+REM
+REM \param task$		The new task name, as supplied by the task
+REM				name menu.
+:
+DEF PROCchoices_task_menu_selection(task$)
+$FNicon_indirection(ChoicesPane%(2), 3) = task$
+PROCicon_redraw(ChoicesPane%(2), 3)
+IF FNicon_test_for_caret(ChoicesPane%(2), 3) THEN PROCicon_put_caret_at_end(ChoicesPane%(2), 3)
 ENDPROC
 
 

@@ -1,0 +1,236 @@
+REM >!Float-TaskMenu
+REM
+REM Copyright 2014, Stephen Fryatt (info@stevefryatt.org.uk)
+REM
+REM This file is part of Float:
+REM
+REM   http://www.stevefryatt.org.uk/software/
+REM
+REM Licensed under the EUPL, Version 1.1 only (the "Licence");
+REM You may not use this work except in compliance with the
+REM Licence.
+REM
+REM You may obtain a copy of the Licence at:
+REM
+REM   http://joinup.ec.europa.eu/software/page/eupl
+REM
+REM Unless required by applicable law or agreed to in
+REM writing, software distributed under the Licence is
+REM distributed on an "AS IS" basis, WITHOUT WARRANTIES
+REM OR CONDITIONS OF ANY KIND, either express or implied.
+REM
+REM See the Licence for the specific language governing
+REM permissions and limitations under the Licence.
+
+
+REM Initialise the TaskMenu module.
+:
+DEF PROCtaskmenu_initialise
+TaskmenuMenu% = 0
+ENDPROC
+
+
+
+
+REM Return a pointer to a menu of currently active task names, sorted
+REM alphabetically; duplicate names will be removed. After use, the memory used
+REM by the menu must be released with a call to PROCtaskmenu_delete.
+REM
+REM NB: The menu is constructed in the shared WimpSlot pool, but data used in
+REM its construction is placed before the menu block itself. As such, there is
+REM no guarantee that two calls to the function will return the same pointer.
+REM
+REM \return			Pointer to the task menu.
+:
+DEF FNtaskmenu_build
+LOCAL name_block%, size%, info%, info_size%, info_end%, next_task%, ptr%, name$
+LOCAL tasks%, name_ptr%, menu_ptr%, loop%, item%, width%
+
+REM Start by claiming 4K of memory from the WimpSlot to store the task names
+REM that we read back from the Task Manager. We read them in and store them as
+REM a long list with CHR$(13) terminating each.
+
+size% = 4096
+name_block% = FNmem_claim(size%)
+IF name_block% = 0 THEN = 0
+
+REM Claim 16 bytes of workspace from the memory stack to use for enumerating
+REM the active tasks.
+
+info_size% = 16
+info% = FNmem_stack(info_size%)
+IF info% = 0 THEN
+	PROCmem_release
+	=0
+ENDIF
+
+ptr% = 0
+next_task% = 0
+tasks% = 0
+
+REPEAT
+	SYS "TaskManager_EnumerateTasks", next_task%, info%, info_size% TO next_task%, info_end%
+
+	REM If the completed end of the block is 16 bytes from the start, there's
+	REM been a set of task data returned which requires processing.
+
+	IF info_end% = info% + info_size% THEN
+		SYS "XOS_GenerateError", info%!4 TO name$
+
+		REM If there's not enough memory left in the WimpSlot for the new
+		REM name, allocate another 4K. Free all the claimed memory and
+		REM exit if the allocation fails.
+
+		IF (size% - ptr%) < (LEN(name$) + 1) THEN
+			size% += 4096
+			name_block% = FNmem_extend(size%)
+			IF name_block% = 0 THEN
+				PROCmem_free(info%)
+				PROCmem_release
+				=0
+			ENDIF
+		ENDIF
+
+		REM Take a copy of the task name into the WimpSlot block.
+
+		$(name_block% + ptr%) = name$
+		ptr% += LEN(name$) + 1
+		tasks% += 1
+	ENDIF
+UNTIL next_task% < 0
+
+REM Free the enumeration workspace.
+
+PROCmem_free(info%)
+
+REM Push the pointer on until it's sitting on a word-aligned address.
+
+ptr% = (ptr% + 3) AND &FFFFFFFC
+
+REM Allocate enough memory for an array of pointers to the strings that have been
+REM found, plus the menu. The menu's requirement is 28 bytes + 24 bytes for each
+REM task name. The array of pointers requires 4 bytes for each task name. This
+REM results in a requirement of 28 bytes per task, plus 28 bytes on top.
+REM
+REM If the allocation fails, we free the previously claimed memory and give up.
+
+IF (size% - ptr%) < (28 * (tasks% + 1)) THEN
+	size% = ptr% + (28 * (tasks% + 1))
+	name_block% = FNmem_extend(size%)
+	IF name_block% = 0 THEN
+		PROCmem_release
+		=0
+	ENDIF
+ENDIF
+
+REM Build a list of name pointers ready for OS_HeapSort to work on. This goes into
+REM the WimpSlot immediately following the end of the run of names. We can then
+REM iterate through the names and build the list as we go.
+
+name_ptr% = name_block% + ptr%
+ptr% = 0
+
+FOR loop% = 0 TO tasks% - 1
+	name_ptr%!(loop% * 4) = name_block% + ptr%
+	ptr% += LEN($(name_block% + ptr%)) + 1
+NEXT loop%
+
+REM Sort the names into alphabetical order.
+
+PROCtaskmenu_sort(name_ptr%, tasks%)
+
+REM Build the menu itself. This goes into the WimpSlot immediately following the
+REM list of name pointers that was constructed for OS_HeapSort.
+
+menu_ptr% = name_ptr% + 4 * tasks%
+
+$menu_ptr% = LEFT$(FNmessage_lookup("TaskMenu"), 12)
+menu_ptr%?11 = 13
+menu_ptr%!12 = &00070207
+menu_ptr%!16 = (LEN($menu_ptr%) + 2) * 16
+menu_ptr%!20 = 44
+menu_ptr%!24 = 0
+
+item% = 0
+
+FOR loop% = 0 TO tasks% - 1
+	IF NOT FNtaskmenu_duplicate_name(name_ptr%, loop%) THEN
+		menu_ptr%!(28 + item% * 24) = 0
+		menu_ptr%!(32 + item% * 24) = -1
+		menu_ptr%!(36 + item% * 24) = &7009131
+		menu_ptr%!(40 + item% * 24) = name_ptr%!(loop% * 4)
+		menu_ptr%!(44 + item% * 24) = 0
+		menu_ptr%!(48 + item% * 24) = LEN($(name_ptr%!(loop% * 4))) + 1
+
+		item% += 1
+
+		width% = LEN($(name_ptr%!(loop% * 4))) * 16
+		IF width% > menu_ptr%!16 THEN menu_ptr%!16 = width%
+	ENDIF
+NEXT loop%
+
+menu_ptr%!(28 + (item% - 1) * 24) = menu_ptr%!(28 + (item% - 1) * 24) OR &80
+
+TaskmenuMenu% = menu_ptr%
+=menu_ptr%
+
+
+
+
+REM Delete the current Task Menu, freeing up the memory that it uses.
+:
+DEF PROCtaskmenu_delete
+PROCmem_release
+TaskmenuMenu% = 0
+ENDPROC
+
+
+
+
+REM Given a menu item index, return the text which corresponds to it.
+REM
+REM \param item%		The menu item to return the text for.
+REM \return			The corresponding menu text, or "".
+:
+DEF FNtaskmenu_decode(item%)
+IF TaskmenuMenu% = 0 OR item% < 0 THEN =""
+
+=$(TaskmenuMenu%!(40 + item% * 24))
+
+
+
+
+REM Test an entry in the array of task name strings to see if it is an exact
+REM duplicate of the entry before.
+REM
+REM \param array%		Pointer to an array of pointers to strings.
+REM \param entries%		The number of the entry to test.
+REM \return			TRUE if the entry is a duplicate; else FALSE.
+:
+DEF FNtaskmenu_duplicate_name(array%, entry%)
+IF entry% = 0 THEN =FALSE
+
+=($(array%!(entry% * 4)) = $(array%!((entry% - 1) * 4)))
+
+
+
+
+REM Sort an array of strings, supplied as an array of pointers to them. On exit,
+REM the pointers in the array will be rearranged to put the strings into case-
+REM sensitive alphabetic order.
+REM
+REM \param array%		Pointer to an array of pointers to the strings
+REM				to be sorted.
+REM \param entries%		The number of entries in the array.
+:
+DEF PROCtaskmenu_sort(array%, entries%)
+LOCAL flags%
+
+SYS "XOS_SWINumberFromString",,"OS_HeapSort32" TO ;flags%
+
+IF (flags% AND 1) = 0 THEN
+	SYS "OS_HeapSort32", entries%, array%, 5,,,,,0
+ELSE
+	SYS "OS_HeapSort", entries%, array%, 5
+ENDIF
+ENDPROC

@@ -112,6 +112,28 @@ IF new_slot_size% < MemBaseSlotSize% + size% THEN =0
 
 
 
+REM Extend the block of shared memory previously claimed from the WimpSlot via
+REM FNmem_claim(). If the slot has not previously been claimed, the call will
+REM fail.
+REM
+REM \param size%		The new number of bytes required.
+REM \return			Pointer to the block of memory, or 0 on failure.
+:
+DEF FNmem_extend(size%)
+LOCAL current_slot_size%, new_slot_size%
+
+IF NOT MemSharedInUse% THEN =0
+
+SYS "Wimp_SlotSize", -1, -1 TO current_slot_size%
+IF current_slot_size% >= MemBaseSlotSize% + size% THEN =HIMEM + MemStackSize%
+
+SYS "Wimp_SlotSize", MemBaseSlotSize% + size%, -1 TO new_slot_size%
+IF new_slot_size% < MemBaseSlotSize% + size% THEN =0
+=HIMEM + MemStackSize%
+
+
+
+
 REM Release the block of memory from the WimpSlot.
 :
 DEF PROCmem_release
