@@ -153,7 +153,7 @@ IF waiting_to_open% THEN
 	IF key_pressed% THEN waiting_to_open% = FALSE
 	IF still_time% > bubble_delay% THEN
 		waiting_to_open% = FALSE
-		PROCget_help_text
+		PROCget_help_text(b% + 20)
 	ENDIF
 ENDIF
 ENDPROC
@@ -331,7 +331,7 @@ REM Handle bounced Wimp messages
 DEF PROCbounced_message
 CASE b%!16 OF
 WHEN &502
-	IF show_default_help% OR show_all_help% THEN PROCmake_default_task_help(icon_bar_help%)
+	IF show_default_help% OR show_all_help% THEN PROCmake_default_task_help(HelpedTaskHandle%, IconBarHelp%)
 
 WHEN &4AF80
 	PROCurl_bounce(b%)
@@ -655,64 +655,84 @@ ENDPROC
 REM ====================================================================================================================
 REM Help text processing and display
 REM ====================================================================================================================
-:
-:
-:
-:
-DEF PROCget_help_text
-:
-REM Get the help text for the bubble.
+
+
+REM Get the help text for the bubble, by sending a Message_HelpRequest to the
+REM task owning the window or icon that is currently under the pointer.
 REM
-REM This procedure relies on Wimp_GetPointerInfo having been called already with a data block of
-REM b%+20 so it should only be called from the idle poll handler.  If the icon is greater than or
-REM equal to -1, the application owning the object being pointed to must be sent a
-REM Message_HelpRequest.  If the icon is less than -1, it is a bit of window furniture and
-REM PROCexpand_text can be called immediately with the result from looking up the correct text in
-REM the message file.
+REM In the event of Message_HelpRequest being sent, the IconBarHelp% and
+REM HelpedTaskHandle% variables are set so that the message bounce handler can
+REM find the relevant details.
+REM
+REM \param pointer%		Pointer to a block of data from Wimp_GetPointerInfo
+REM				indicating where the pointer is currently located.
 :
-IF b%!32>-2 OR show_ibar_help% OR show_all_help% THEN
- IF b%!36>=-1 THEN
-  b%!0=40
-  b%!12=0
-  b%!16=&502
-  icon_bar_help%=(b%!32=-2) AND (b%!36<>-1)
-  SYS "Wimp_SendMessage",18,b%,b%!32,b%!36 TO ,,helped_task_handle%
- ELSE
-  IF show_tool_help% OR show_all_help% THEN
-   $b% = FNmessage_lookup("HelpI"+STR$(-(b%!36)))
-   PROCexpand_text(b%)
-  ENDIF
- ENDIF
+DEF PROCget_help_text(pointer%)
+LOCAL message%
+
+REM If the window is the iconbar, there's nothing to do unless we're shoing
+REM help for iconbar icons.
+
+IF (pointer%!12 <= -2) AND (NOT show_ibar_help%) AND (NOT show_all_help%) THEN ENDPROC
+
+REM If the icon is a standard icon or window work area, a Message_HelpRequest
+REM is sent to the appropriate task for more details.
+REM
+REM If the icon is a piece of window furniture (ie. the icon handle is -2 or
+REM less), then the correct message can be looked up immediately from the
+REM message file.
+
+IF pointer%!16 >= -1 THEN
+	message% = FNmem_stack(40)
+	IF message% = 0 THEN ENDPROC
+
+	IconBarHelp% = (pointer%!12 = -2) AND (pointer%!16 <> -1)
+
+	message%!0 = 40
+	message%!12 = 0
+	message%!16 = &502		: REM Message_HelpRequest
+	message%!20 = pointer%!0	: REM Mouse X
+	message%!24 = pointer%!4	: REM Mouse Y
+	message%!28 = pointer%!8	: REM Button State
+	message%!32 = pointer%!12	: REM Window Handle
+	message%!36 = pointer%!16	: REM Icon Handle
+	SYS "Wimp_SendMessage", 18, message%, pointer%!12, pointer%!16 TO ,,HelpedTaskHandle%
+	PROCmem_free(message%)
+ELSE
+	IF pointer%!16 >= -14 AND pointer%!16 <= -2 AND (show_tool_help% OR show_all_help%) THEN
+		$b% = FNmessage_lookup("Furniture.I" + STR$(ABS(pointer%!16)))
+		PROCexpand_text(b%)
+	ENDIF
 ENDIF
 ENDPROC
-:
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
-:
-DEF PROCmake_default_task_help(icon_bar%)
-:
-REM A task has not responded to a request.  If it was us, just ignore it.
+
+
+
+
+REM Generate default help for an application which has not responded to a
+REM Message_HelpRequest.  Using the task handle, the task name is looked up and
+REM inserted into the default piece of text from our messages file before
+REM passing this to PROCexpand_text.
 REM
-REM Using the task handle we recorded in PROCget_help_text the task name is looked up and inserted
-REM into the default piece of text from our messages file before passing this to PROCexpand_text.
-REM Token HelpH2 is used for icon-bar icons, HelpH3 is used for windows.
+REM \param task_handle%		The handle of the task that requires a message.
+REM \param icon_bar%		TRUE if the message is for an iconbar icon;
+REM				FALSE if it is for any other window.
 :
-LOCAL task_name$,token$,flags%
-:
-IF helped_task_handle%<>TaskHandle% THEN
- IF icon_bar% THEN token$="2" ELSE token$="3"
- :
- SYS "XTaskManager_TaskNameFromHandle",helped_task_handle% TO task_name$ ;flags%
- :
- IF (flags% AND 1) =0 THEN
-  $b% = FNmessage_param_lookup("HelpH"+token$, task_name$, "", "", "")
-  PROCexpand_text(b%)
- ENDIF
+DEF PROCmake_default_task_help(task_handle%, icon_bar%)
+LOCAL task_name$, token$, flags%
+
+REM If the task is Float, just ignore the message.
+
+IF task_handle% = TaskHandle% THEN ENDPROC
+
+token$ = "Default."
+IF icon_bar% THEN token$ += "IconBar" ELSE token$ += "Window"
+
+SYS "XTaskManager_TaskNameFromHandle", task_handle% TO task_name$ ;flags%
+
+IF (flags% AND 1) = 0 THEN
+	$b% = FNmessage_param_lookup(token$, task_name$, "", "", "")
+	PROCexpand_text(b%)
 ENDIF
 ENDPROC
 :
