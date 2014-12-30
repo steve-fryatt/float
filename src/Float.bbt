@@ -25,6 +25,7 @@ REM permissions and limitations under the Licence.
 LIBRARY "BASIC:Config"
 LIBRARY "BASIC:Icon"
 LIBRARY "BASIC:Menu"
+LIBRARY "BASIC:Message"
 LIBRARY "BASIC:Resources"
 LIBRARY "BASIC:String"
 LIBRARY "BASIC:Template"
@@ -181,14 +182,16 @@ WHEN -2
 		PROCchoices_open_window(!b%, b%!4)
 	ENDCASE
 
-WHEN colours_window%
+WHEN ColoursWindow%
 	IF b%!16 >= 1 THEN PROCchoices_colour_selection(b%!16 - 1)
-	PROCwindow_close(colours_window%)
+	PROCwindow_close(ColoursWindow%)
 
-WHEN prog_info_window%
+WHEN InfoWindow%
 	IF b%!16 = 8 THEN PROCurl_launch(FNmessage_lookup("SupportURL")) : PROCmenu_create(-1,0,0)
 ENDCASE
 ENDPROC
+
+
 
 
 REM Respond to keypress events from the Wimp.
@@ -284,7 +287,7 @@ WHEN &0
 	quit%=TRUE
 
 WHEN &502
-	PROCsend_interactive_help
+	PROCsend_interactive_help(b%)
 
 WHEN &503
 	IF (NOT FNignore_task(b%!4)) OR show_all_help% THEN PROCexpand_text(b%+20)
@@ -359,12 +362,7 @@ resources_path$=FNresources_find_territory_folder("Float:Resources")
 :
 REM Allocate space and load the message file into memory.
 :
-DIM messages% 16
-:
-SYS "MessageTrans_FileInfo",,resources_path$+"Messages" TO flags%,,size%
-REMIF flags% AND 1 THEN buffer%=0 ELSE DIM buffer% size%
-DIM buffer% size%
-SYS "MessageTrans_OpenFile",messages%,resources_path$+"Messages",buffer%
+PROCmessage_initialise(resources_path$+"Messages")
 :
 task_name$=FNmessage_lookup("TaskName")
 task_sprite$=FNmessage_lookup("TaskSpr")
@@ -440,16 +438,16 @@ PROCignore_initialise
 PROCtaskmenu_initialise
 :
 PROCtemplate_load("Panel",b%,ind_area%,ind_size%,-1)
-SYS "Wimp_CreateWindow",,b% TO bubble_window%
+SYS "Wimp_CreateWindow",,b% TO BubbleWindow%
 PROCtemplate_load("ProgInfo",b%,ind_area%,ind_size%,-1)
-SYS "Wimp_CreateWindow",,b% TO prog_info_window%
+SYS "Wimp_CreateWindow",,b% TO InfoWindow%
 PROCtemplate_load("Colours",b%,ind_area%,ind_size%,-1)
-SYS "Wimp_CreateWindow",,b% TO colours_window%
+SYS "Wimp_CreateWindow",,b% TO ColoursWindow%
 :
 PROCtemplate_close
 :
-$FNicon_indirection(prog_info_window%,4)=CHR$(169) + " Stephen Fryatt, 1999-" + MID$(build_date$, 8)
-$FNicon_indirection(prog_info_window%,6)=build_version$+" ("+build_date$+")"
+$FNicon_indirection(InfoWindow%,4)=CHR$(169) + " Stephen Fryatt, 1999-" + MID$(build_date$, 8)
+$FNicon_indirection(InfoWindow%,6)=build_version$+" ("+build_date$+")"
 :
 REM Load the sprites file into memory.
 :
@@ -458,7 +456,7 @@ sprite_area%=FNwimpsprite_load_user_sprites("Float:Sprites")
 REM Load the menu definitions into memory and create the menus.
 :
 PROCmenu_initialise
-!q%=prog_info_window%
+!q%=InfoWindow%
 PROCmenu_load_templates(resources_path$+"Menus",q%)
 IconbarMenu% = !q%
 FontMenu% = 0
@@ -570,7 +568,6 @@ REM Close the task down, losing the font and closing the messages file first.
 :
 PROCcode_finalise
 PROClose_font
-SYS "MessageTrans_CloseFile", messages%
 SYS "MessageTrans_CloseFile", tokens%
 SYS "Wimp_CloseDown", TaskHandle%, &4B534154
 ENDPROC
@@ -581,68 +578,75 @@ ENDPROC
 REM ====================================================================================================================
 REM Interactive help (for our own windows and icons)
 REM ====================================================================================================================
+
+
+
+
+REM Process requests for interactive help text, sent to us for our own windows.
+REM
+REM \param message%		Pointer to the Message_HelpRequest block.
 :
-:
-:
-:
+DEF PROCsend_interactive_help(message%)
+LOCAL root$, suffix$, found%, message$
 
-REM Supply interactive help messages for ourselves to any interactive help
-REM client which requests them. 
-:
-DEF PROCsend_interactive_help
-LOCAL processed%, token$, len%
+found% = FALSE
 
-REM Try and find an appropriate token for the window and icon currently under
-REM the pointer.
+IF root$ = "" THEN root$ = FNchoices_get_help_token_root(message%)
+IF root$ = "" THEN root$ = FNignore_get_help_token_root(message%)
 
-processed% = FALSE
-token$=""
+REM Compare the window handle to the windows we know about, and find the
+REM relevant token name.
 
-REM First pass the message to any modules which might have an interest, stopping
-REM as soon as one claims the message.
-
-IF NOT processed% THEN processed% = FNchoices_process_help_request(b%, token$)
-
-REM If none of the modules claimed the message, have a go at finding a suitable
-REM token for the remaining windows.
-
-IF NOT processed% THEN
-	CASE b%!32 OF
-	WHEN -2
-		token$ = "HelpH1"
-
-	WHEN prog_info_window%
-		IF b%!36 = 8 THEN token$ = "HelpH5" ELSE token$ = "HelpH4"
-
-	WHEN colours_window%
-		IF b%!36 > 0 THEN token$ = "HelpCC1" ELSE token$ = "HelpCC0"
-
-	WHEN bubble_window%
-		REM Don't return help on the bubble itself...
-
-	OTHERWISE
-		SYS "Wimp_GetMenuState", 1, q%, b%!32, b%!36
-		CASE FNmenu_current_handle OF
-		WHEN IconbarMenu%
-			IF !q% > -1 THEN token$ = "Menu0" + STR$(!q% + 1)
-		WHEN FontMenu%
-			IF !q% > -1 THEN token$ = "MenuFF"
-		WHEN TaskMenu%
-			IF !q% > -1 THEN token$ = "MenuTT"
-		ENDCASE
+IF root$ = "" THEN
+	CASE message%!32 OF
+		WHEN -2			: root$ = "IconBar"
+		WHEN InfoWindow%	: root$ = "Info"
+		WHEN ColoursWindow%	: root$ = "Colours"
+		WHEN BubbleWindow%	: root$ = "Bubble"
+		OTHERWISE		: root$ = ""
 	ENDCASE
 ENDIF
 
-REM If a token was found, look it up and reply to the help request.
+REM Look up the help text, either as a window message or by checking the
+REM menus that belong to us.
+REM
+REM The bubble window is a special case, as we don't want to return help for
+REM that...
 
-IF token$ <> "" THEN
-	SYS "MessageTrans_Lookup", messages%, token$, b%+20, 235 TO ,,,len%
+IF root$ <> "" THEN
+	IF root$ <> "Bubble" THEN
+		suffix$ = FNicon_validation_command(message%!32, message%!36, "N")
 
-	b%!12 = b%!8
-	b%!16 = &503
-	!b% = 24 + (len% AND &FFFFFC)
-	SYS "Wimp_SendMessage", 17, b%, b%!4
+		REM If there's a name in the validation string, use that; otherwise
+		REM check to see if there's a special case to set up.
+
+		IF suffix$ <> "" THEN root$ += "." + suffix$
+		found% = FNmessage_lookup_result("Help." + root$, message$)
+	ENDIF
+ELSE
+	SYS "Wimp_GetMenuState", 1, q%, message%!32, message%!36
+	CASE FNmenu_current_handle OF
+		WHEN IconbarMenu%	: root$ = "IconBarMenu." + RIGHT$("00" + STR$(!q%), 2)
+		WHEN FontMenu%		: root$ = "FontMenu." + RIGHT$("00" + STR$(!q%), 2)
+		WHEN TaskMenu%		: root$ = "TaskMenu." + RIGHT$("00" + STR$(!q%), 2)
+	ENDCASE
+	
+	IF root$ <> "" THEN found% = FNmessage_lookup_result("Help." + root$, message$)
 ENDIF
+
+REM If no message was found, give up now.
+
+IF NOT found% THEN ENDPROC
+
+REM If a message was found, send it back to the requestor.
+
+IF LEN(message$) > 235 THEN message$ = LEFT$(message$, 235)
+
+message%!12 = message%!8
+message%!16 = &503
+$(message% + 20) = message$ + CHR$(0)
+!message% = 24 + (LEN(message$) AND &FFFFFC)
+SYS "Wimp_SendMessage", 17, message%, message%!4
 ENDPROC
 :
 :
@@ -675,7 +679,7 @@ IF b%!32>-2 OR show_ibar_help% OR show_all_help% THEN
   SYS "Wimp_SendMessage",18,b%,b%!32,b%!36 TO ,,helped_task_handle%
  ELSE
   IF show_tool_help% OR show_all_help% THEN
-   SYS "MessageTrans_Lookup",messages%,"HelpI"+STR$(-(b%!36)),b%,40000
+   $b% = FNmessage_lookup("HelpI"+STR$(-(b%!36)))
    PROCexpand_text(b%)
   ENDIF
  ENDIF
@@ -698,15 +702,15 @@ REM Using the task handle we recorded in PROCget_help_text the task name is look
 REM into the default piece of text from our messages file before passing this to PROCexpand_text.
 REM Token HelpH2 is used for icon-bar icons, HelpH3 is used for windows.
 :
-LOCAL task_name%,token$,flags%
+LOCAL task_name$,token$,flags%
 :
 IF helped_task_handle%<>TaskHandle% THEN
  IF icon_bar% THEN token$="2" ELSE token$="3"
  :
- SYS "XTaskManager_TaskNameFromHandle",helped_task_handle% TO task_name% ;flags%
+ SYS "XTaskManager_TaskNameFromHandle",helped_task_handle% TO task_name$ ;flags%
  :
  IF (flags% AND 1) =0 THEN
-  SYS "MessageTrans_Lookup",messages%,"HelpH"+token$,b%,4000,task_name%
+  $b% = FNmessage_param_lookup("HelpH"+token$, task_name$, "", "", "")
   PROCexpand_text(b%)
  ENDIF
 ENDIF
@@ -972,9 +976,9 @@ IF actual_lines% THEN
  :
  shadow_size%=draw_shadow%*-8
  :
- IF bubble_open% THEN PROCwindow_close(bubble_window%)
+ IF bubble_open% THEN PROCwindow_close(BubbleWindow%)
  :
- !q%=bubble_window%
+ !q%=BubbleWindow%
  q%!4=x_pos%
  q%!8=y_pos%-os_height%-shadow_size%
  q%!12=x_pos%+os_width%+shadow_size%+2
@@ -988,7 +992,7 @@ IF actual_lines% THEN
  bubble_height%=os_height%
  bubble_lines%=actual_lines%
  :
- IF bubble_open% THEN PROCwindow_force_redraw(bubble_window%)
+ IF bubble_open% THEN PROCwindow_force_redraw(BubbleWindow%)
  bubble_open%=TRUE
 ENDIF
 ENDPROC
@@ -1070,7 +1074,7 @@ REM Close the help bubble.
 REM
 REM Close the backing window so the WIMP redraws the screen, then flag the bubble closed.
 :
-IF bubble_open% THEN PROCwindow_close(bubble_window%)
+IF bubble_open% THEN PROCwindow_close(BubbleWindow%)
 bubble_open%=FALSE
 ENDPROC
 :
@@ -1281,20 +1285,4 @@ IF c%>=4 AND c%<=8 THEN f%=0 ELSE f%=7
 PROCicon_set_colours(w%,i%,f%,c%)
 $FNicon_indirection(w%,i%)=STR$(c%)
 ENDPROC
-:
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
-:
-DEF FNmessage_lookup(token$)
-:
-REM Look up a token in the messages file, returning the associated message text.
-:
-LOCAL message$
-:
-IF token$<>"" THEN SYS "MessageTrans_Lookup",messages%,token$,0 TO ,,message$ ELSE message$=token$
-=message$
+

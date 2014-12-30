@@ -132,7 +132,7 @@ WHEN ChoicesPane%(1)
 	WHEN 4 : REM Select
 		CASE b%!16 OF
 		WHEN 5, 8, 11
-			PROCmenu_create_popup(colours_window%, ChoicesPane%(1), b%!16)
+			PROCmenu_create_popup(ColoursWindow%, ChoicesPane%(1), b%!16)
 			ChoicesColourIcon% = b%!16 - 1
 		WHEN 14
 			FontMenu% = FNbuild_font_menu
@@ -192,70 +192,25 @@ ENDCASE
 
 
 
-REM Return interactive help message tokens for parts of the Choices dialogue.
+
+REM Return interactive help window token names for windows belonging to the
+REM Choices module.
 REM
-REM \param b%			The message block from Message_HelpRequest.
-REM \param token$		Return the message token, or "" for no message.
-REM \return			TRUE if the request was handled; else FALSE.
+REM \param message%		The message block from Message_HelpRequest
+REM \return			The token if one is known, or ""
 :
-DEF FNchoices_process_help_request(b%, RETURN token$)
-LOCAL processed%
+DEF FNchoices_get_help_token_root(message%)
+LOCAL root$
 
-processed% = TRUE
-
-CASE b%!32 OF
-WHEN ChoicesWindow%
-	CASE b%!36 OF
-	WHEN 0, 1, 2
-		token$ = "HelpCW" + STR$(b%!36)
-	WHEN 4, 5, 6
-		token$ = "HelpCW" + STR$(b%!36 - 1)
-	OTHERWISE
-		token$ = "HelpCW"
-	ENDCASE
-
-WHEN ChoicesPane%(0)
-	CASE b%!36 OF
-	WHEN 2, 3, 4, 5
-		token$ = "HelpC0" + STR$(b%!36 - 2)
-	WHEN 7
-		token$ = "HelpC0" + STR$(b%!36 - 3)
-	WHEN 10
-		token$ = "HelpC0" + STR$(b%!36 - 5)
-	WHEN 14, 15, 16
-		token$ = "HelpC0" + STR$(b%!36 - 8)
-	ENDCASE
-
-WHEN ChoicesPane%(1)
-	CASE b%!36 OF
-	WHEN 0
-		token$ = "HelpC1" + STR$(b%!36)
-	WHEN 4
-		token$ = "HelpC1" + STR$(b%!36 - 3)
-	WHEN 7
-		token$ = "HelpC1" + STR$(b%!36 - 4)
-	WHEN 10
-		token$ = "HelpC1" + STR$(b%!36 - 6)
-	WHEN 5, 8, 22
-		token$ = "HelpC12"
-	WHEN 14, 15
-		token$ = "HelpC1" + STR$(b%!36 - 9)
-	WHEN 17
-		token$ = "HelpC1" + STR$(b%!36 - 10)
-	WHEN 19
-		token$ = "HelpC1" + STR$(b%!36 - 11)
-	WHEN 21
-		token$ = "HelpC1" + STR$(b%!36 - 12)
-	ENDCASE
-
-WHEN ChoicesPane%(2)
-	token$ = "HelpCC0"
-
-OTHERWISE
-	processed% = FALSE
+CASE message%!32 OF
+	WHEN ChoicesWindow%	: root$ = "Choices"
+	WHEN ChoicesPane%(0)	: root$ = "Choices0"
+	WHEN ChoicesPane%(1)	: root$ = "Choices1"
+	WHEN ChoicesPane%(2)	: root$ = "Choices2"
+	OTHERWISE		: root$ = ""
 ENDCASE
 
-=processed%
+=root$
 
 
 

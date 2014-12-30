@@ -172,6 +172,25 @@ ENDCASE
 
 
 
+REM Return interactive help window token names for windows belonging to the
+REM Ignore module.
+REM
+REM \param message%		The message block from Message_HelpRequest
+REM \return			The token if one is known, or ""
+:
+DEF FNignore_get_help_token_root(message%)
+LOCAL root$
+
+CASE message%!32 OF
+	WHEN IgnorePane%	: root$ = "Ignore"
+	OTHERWISE		: root$ = ""
+ENDCASE
+
+=root$
+
+
+
+
 REM Get the window handle of the ignore list pane window.
 REM
 REM \return			The handle of the window.

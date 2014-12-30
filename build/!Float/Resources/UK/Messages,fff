@@ -31,51 +31,63 @@ SupportURL:http://www.stevefryatt.org.uk/software/float/
 
 URLFailed:Could not find an application to launch the given URL.
 
-HelpH1:\TFloating Help application.|MMove the pointer to receive help from other applications.|M\Stoggle help panes on and off.|M\Achange the options.
+Help.IconBar:\TFloating Help application.|MMove the pointer to receive help from other applications.|M\Stoggle help panes on and off.|M\Achange the options.
+Help.Info:This \w displays information about Float.
+Help.Info.Web:\Sopen the Float home page in your web browser, if one has been seen.
+
+Help.Colours:\Tcolour selection \w.|M\Schoose a colour.
+
+Help.Choices:\TFloating Help options \w.|MYou can use it to change the way Floating Help operates.
+Help.Choices.Cancel:\Sclose the choices \w and forget any changes made.|M\Aforget any changes made so far.
+Help.Choices.Save:\Sclose the choices \w, using the changes and saving them to disc.|M\Ause the changes and save them.
+Help.Choices.Apply:\Sclose the choices \w and use the changes|M\Ause the changes.
+Help.Choices.Display:\Sset options concerning the display of help panes and the types of messages offered.
+Help.Choices.Appearance:\Sset options concerning the font and colours used in the help panes.
+Help.Choices.Ignore:\Sset a list of tasks for Float to ignore.
+
+Help.Choices0.Open:\Stoggle the display of help panes on and off.|MThe delay can be set on the right.
+Help.Choices0.AutoClose:\Stoggle the automatic closing of help panes on and off.|MThe delay can be set on the right.
+Help.Choices0.ActionClose:\Stoggle the closing of help panes when the mouse is clicked.
+Help.Choices0.DragClose:\Stoggle whether panes are re-opened when a drag is finished.
+Help.Choices0.OpenTime:\Ttime in seconds that the mouse must be still for before a help pane is opened.|M\Senter a new time.
+Help.Choices0.CloseTime:\Ttime in seconds that a help pane will stay open if the mouse is not moved.|M\Sto enter a new time.
+Help.Choices0.Furniture:\Stoggle help for \w furniture on and off.|MThis can be overridden with 'Show all' in the icon-bar menu.
+Help.Choices0.IBar:\Stoggle help for icons on the icon bar on and off.|MThis can be overridden with 'Show all' in the icon-bar menu.
+Help.Choices0.Default:\Stoggle whether or not help is shown for tasks that do not respond to the help request.|MThis can be overridden with 'Show all' in the icon-bar menu.
+Help.Choices1.FontM:\Schose another font to display the help text.
+Help.Choices1.Font:\Tfont used to display the help text.|MClick \s on the right to choose another font.
+Help.Choices1.FontSize:\Tsize of the display font, in points.|M\Senter a new size.
+Help.Choices1.FontAspect:\Taspect ratio of the display font (width/height).|M\Senter a new ratio.
+Help.Choices1.DeskFont:\Stoggle whether or not the standard desktop font is used to display help text, instead of the outline font shown above.
+Help.Choices1.ColText:\Tcolour that the text is printed in help panes.|MClick \s on the right to change the colour.
+Help.Choices1.ColTextM/Help.Choices1.ColBackM/Help.Choices1.ColShadowM:\Schange the colour of the option on the left.
+Help.Choices1.ColBack:\Tcolour of the help pane backgrounds.|MClick \s on the right to change the colour.
+Help.Choices1.ColShadow:\Tcolour shadows under the help panes.|MClick \s on the right to change the colour.
+Help.Choices1.Shadows:\Stoggle the shadows under the help panes on and off.
+Help.Choices2.Name:Enter the name of an application whose help texts are to be ignored by Float, and click \s on Add to add it to the list above.|MClick \s on the pop-up menu button to the right to get a list of name of currently-running applications.
+Help.Choices2.Menu:\Sget a list of the names of all the currently-running applications.
+Help.Choices2.Add:\Sadd the application name from the field on the left to the list of ignored applications.
+Help.Choices2.Remove:\Sremove the highlighted entries from the list of ignored applications.
+Help.Ignore:\Tlist of applications whose help texts will be ignored by Float.|M\Shighlight the entry under the mouse. \Aalter an entry's highlight.|MHighlighted entries can be removed from the list by clicking \s on Remove to the right.
+
+Help.IconBarMenu.00:\Rsee information about Float and visit its website for updates.
+Help.IconBarMenu.01:\Saccess documentation for Float.
+Help.IconBarMenu.02:\Schange the Floating Help options.
+Help.IconBarMenu.03:\Stoggle showing help for all parts of the Desktop, regardless of the settings in Float.
+Help.IconBarMenu.04:\Squit Float.
+
+Help.FontMenu.??:\Schoose this font to display the help text.
+
+Help.TaskMenu.??:\Senter this task's name into the new task name field.
+
+
+
+
+
 HelpH2:\T%0 icon.
 HelpH3:This is a %0 \w.
-HelpH4:This \w displays information about Float.
-HelpH5:\Sopen the Float home page in your web browser, if one has been seen.
 
-HelpCW:\TFloating Help options \w.|MYou can use it to change the way Floating Help operates.
-HelpCW0:\Sclose the choices \w and forget any changes made.|M\Aforget any changes made so far.
-HelpCW1:\Sclose the choices \w, using the changes and saving them to disc.|M\Ause the changes and save them.
-HelpCW2:\Sclose the choices \w and use the changes|M\Ause the changes.
-HelpCW3:\Sset options concerning the display of help panes and the types of messages offered.
-HelpCW4:\Sset options concerning the font and colours used in the help panes.
-HelpCW5:\Sset a list of tasks for Float to ignore.
 
-HelpC00:\Stoggle the display of help panes on and off.|MThe delay can be set on the right.
-HelpC01:\Stoggle the automatic closing of help panes on and off.|MThe delay can be set on the right.
-HelpC02:\Stoggle the closing of help panes when the mouse is clicked.
-HelpC03:\Stoggle whether panes are re-opened when a drag is finished.
-HelpC04:\Ttime in seconds that the mouse must be still for before a help pane is opened.|M\Senter a new time.
-HelpC05:\Ttime in seconds that a help pane will stay open if the mouse is not moved.|M\Sto enter a new time.
-HelpC06:\Stoggle help for \w furniture on and off.|MThis can be overridden with 'Show all' in the icon-bar menu.
-HelpC07:\Stoggle help for icons on the icon bar on and off.|MThis can be overridden with 'Show all' in the icon-bar menu.
-HelpC08:\Stoggle whether or not help is shown for tasks that do not respond to the help request.|MThis can be overridden with 'Show all' in the icon-bar menu.
-
-HelpC10:\Stoggle the shadows under the help panes on and off.
-HelpC11:\Tcolour that the text is printed in help panes.|MClick \s on the right to change the colour.
-HelpC12:\Schange the colour of the option on the left.
-HelpC13:\Tcolour of the help pane backgrounds.|MClick \s on the right to change the colour.
-HelpC14:\Tcolour shadows under the help panes.|MClick \s on the right to change the colour.
-HelpC15:\Schose another font to display the help text.
-HelpC16:\Tfont used to display the help text.|MClick \s on the right to choose another font.
-HelpC17:\Stoggle whether or not the standard desktop font is used to display help text, instead of the outline font shown above.
-HelpC18:\Tsize of the display font, in points.|M\Senter a new size.
-HelpC19:\Taspect ratio of the display font (width/height).|M\Senter a new ratio.
-
-HelpCC0:\Tcolour picker \w.
-HelpCC1:\Tcolour picker \w.|M\Schoose this colour.
-
-Menu01:\Rsee information about Float and visit its website for updates.
-Menu02:\Sread access documentation for Float.
-Menu03:\Schange the Floating Help options.
-Menu04:\Stoggle showing help for all parts of the Desktop, regardless of the settings in Float.
-Menu05:\Squit Float.
-
-MenuFF:\Schoose this font to display the help text.
 #
 # Window furniture help
 #
