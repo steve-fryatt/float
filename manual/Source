@@ -108,7 +108,7 @@ Some of the &ldquo;nice&rdquo; features of <cite>Float</cite> are:
 <li>Configurable pane appearance: font, colours and shadow can be user set
 <li>Supports help on window tools
 <li>Can ignore help from selected applications (such as Filer, Pinboard, etc)
-<li>Supports full icon-bar help
+<li>Supports full iconbar help
 <li>Ability to quickly toggle panes on and off
 <li>Full support of Help dictionary
 </list>
@@ -120,9 +120,9 @@ Some of the &ldquo;nice&rdquo; features of <cite>Float</cite> are:
 
 <chapter title="Installing Float" file="Installation">
 
-<cite>Float</cite> requires RISC&nbsp;OS&nbsp;3 or later, or an equivalent version of the Font Manager. It works on RISC&nbsp;OS&nbsp;4 and has been tested on Select. The code should be 26/32-bit neutral and ought to work on RISC&nbsp;OS&nbsp;5. <cite>Float</cite> can be run off a hard disc or floppy disc.
+<cite>Float</cite> requires RISC&nbsp;OS&nbsp;3.8 or later; it may work on earlier versions, but requies the Nested Wimp and is not supported. The code should be 26/32-bit neutral and ARMv7 aware, and ought to work on RISC&nbsp;OS&nbsp;5. <cite>Float</cite> can be run off a hard disc or floppy disc.
 
-To install Float, copy the <file>!Float</file> application to a suitable place on your disc. If you want it to run on startup, <cite>Float</cite> should be placed in your boot sequence. On a machine with the new boot structure installed, this can be done by copying it into the <file>!Boot.Choices.Boot.Tasks</file> directory (<key>shift</key>-double-click on <file>!Boot</file> in the root directory of your hard drive, double-click on the <file>Choices</file> directory that appears, then on the <file>Boot</file> directory, then on the <file>Tasks</file> directory). On older machines, you will have to make your own arrangements (but you will probably have made your own boot system anyway).
+To install Float, copy the <file>!Float</file> application to a suitable place on your disc. If you want it to run on startup, <cite>Float</cite> should be placed in your boot sequence. On a machine with the new boot structure installed, this can be done by adding it to the list of tasks to be run on startup via Configure. On older machines, you will have to make your own arrangements (but you will probably have made your own boot system anyway).
 
 By default, <cite>Float</cite> will set the system variable &lt;Help$Start&gt; when it is seen or run by the Filer. This makes it the default interactive help client to be loaded if one is required.
 
@@ -149,9 +149,9 @@ To restore <cite>Float</cite> as the default client, repeat the process but remo
 
 <chapter title="Using Float" file="Using">
 
-To use <cite>Float</cite>, run it in the usual way by double-clicking on its icon. When its icon appears on the icon-bar, pointing at different bits of the desktop will cause help panes to appear after a short (user-defined) interval. Moving the mouse causes the panes to disappear; they disappear on their own after a given time anyway or when the mouse is clicked or a key pressed.
+To use <cite>Float</cite>, run it in the usual way by double-clicking on the <file>!Float</file> icon in a directory viewer. When its icon appears on the iconbar, pointing at different bits of the desktop will cause help panes to appear after a short (user-defined) interval. Moving the mouse causes the panes to disappear; they disappear on their own after a given time anyway or when the mouse is clicked or a key pressed.
 
-The panes can be toggled on and off by clicking <mouse>select</mouse> on the <cite>Float</cite> icon on the icon-bar. When it is &ldquo;greyed out&rdquo;, no help is provided: this can allow you to get on without the help getting in the way.
+The panes can be toggled on and off by clicking <mouse>select</mouse> on the <cite>Float</cite> icon on the iconbar. When the icon is &ldquo;greyed out&rdquo;, no help is provided: this can allow you to get on without the help getting in the way.
 
 </chapter>
 
@@ -161,32 +161,57 @@ The panes can be toggled on and off by clicking <mouse>select</mouse> on the <ci
 
 <chapter title="User Choices" file="Choices">
 
-Clicking <mouse>adjust</mouse> on the <cite>Float</cite> icon or selecting <menu>Choices...</menu> from the icon-bar menu allows many aspects of Floating Help&rsquo;s operation to be altered.
+Clicking <mouse>adjust</mouse> on <cite>Float</cite>&rsquo;s iconbar icon or selecting <menu>Choices...</menu> from its iconbar menu allows many aspects of Floating Help&rsquo;s operation to be altered. The dialogue is split into three sections on separate tabs, which can be accessed by clicking on their buttons in the right-hand margin.
 
-<icon>Open panes</icon> determines whether help panes are shown or not. This is not quite the same as clicking <mouse>select</mouse> on the icon-bar, as it also takes effect when <cite>Float</cite> is next run. If you change this setting, the new state is reflected on the icon-bar when you click on <icon>OK</icon> or <icon>Cancel</icon>, if you don&rsquo;t change it the icon-bar is not updated even if the two states are different (if you see what I mean ;-).
+Once the choices have been set as required, clicking <mouse>select</mouse> on <icon>Apply</icon> will apply them to <cite>Float</cite>; clicking with <mouse>adjust</mouse> will also leave the dialogue open so that further changes can be made. Clicking on <icon>Save</icon> behaves in a similar way, but also saves the changes to disc so that they become the new default options when <cite>Float</cite> is next loaded.
 
-<icon>Open after</icon> is the time, in seconds, that the mouse must be &ldquo;stationary&rdquo; for before a pane is displayed. Stationary means that it does not move more than, by default, 8 OS units in any direction.
+In contrast, clicking <mouse>select</mouse> on <icon>Cancel</icon> will forget any changes made in the dialogue and close it; clicking with <mouse>adjust</mouse> will leave the dialogue open, but reset its contents to reflect the settings currently in force.
 
-<icon>Auto close panes</icon> determines whether panes are closed after a given time. If set, panes will be closed after being open the number of seconds given in the <icon>Close after</icon> field.
 
-<icon>Close on key press or mouse click</icon> indicates whether to close a pane when you type on the keyboard or click the mouse, and to prevent one from opening if the key press or mouse click occurs before the <icon>Open after</icon> time. <icon>Stay closed over drags</icon> can be used to prevent panes opening at the end of a drag; this can be useful since you probably know what you were dragging where. It can only used if the option above is selected.
+<subhead title="Display options">
 
-<icon>Draw shadows</icon> indicates whether to draw drop shadows on the help panes. These are a fixed size and appear as if the light is from the top left of the screen.
+The <icon>Display</icon> tab contains options which affect the way that help messages are opened and closed (the <icon>Opening</icon> section), and which messages are presented to the user (the <icon>Messages</icon> section).
 
-<icon>Show help for window furniture</icon> allows the user to decide whether or not help should be shown for the furniture around the edge of a window. If this is off, the potentially distracting messages will not appear. This can be temporarily overridden by the <menu>Show all</menu> option in the icon-bar menu.
+<icon>Open panes</icon> determines whether help panes are shown or not. This is not quite the same as clicking <mouse>select</mouse> on <cite>Float</cite>&rsquo;s iconbar icon, as it also takes effect when <cite>Float</cite> is next run. If the state of this option is changed, then the new state is reflected on the iconbar when the changes are applied (by clicking on <icon>Apply</icon> or <icon>Save</icon>); if the state is not changed, then the iconbar state is not affected (even if it differs from the setting of <icon>Open panes</icon>).
 
-<icon>Show help over icon bar</icon> selects whether or not help is given for the icons on the icon bar. When on, help is given for all the icons (with the information being &lsquo;made up&rsquo; for those applications who do not provide help; see below). This setting is ignored (with messages being displayed) if <menu>Show all</menu> is ticked in the icon-bar menu.
+<icon>Open after</icon> gives the time, in seconds, that the mouse must be &ldquo;stationary&rdquo; for before a pane is displayed. Stationary means that it does not move more than, by default, 8 OS units in any direction.
 
-<icon>Show default message</icon> determines whether or not <cite>Float</cite> will make up messages for applications not responding to the help requests. This message will just identify the application that the window (or icon bar icon) belongs to. If <menu>Show all</menu> in the icon-bar menu is ticked, these messages will appear regardless of this setting.
+<icon>Auto close panes</icon> determines whether panes are closed after a given time. If set, panes will be closed after being open the number of seconds given in the <icon>Close after</icon> field; if unset, panes remain on display indefinitely if no mouse or keyboard activity is seen.
 
-The colours section specifies the colours for the text and pane borders, the background and the shadows. Click <mouse>select</mouse> on the menu icons and choose new colours from the palette that appears.
+<icon>Close on key press or mouse click</icon> indicates whether to close a pane when keyboard or mouse activity is detected, and to prevent a pane from opening if a key press or mouse click occurs before the <icon>Open after</icon> time. <icon>Stay closed over drags</icon> can be used to prevent panes opening at the end of a drag. It can only used if the option above is selected.
 
-The font section selects the font used to display the help text. The font can be changed by clicking <mouse>select</mouse> on the menu icon to the right of the <icon>Font</icon> field; its size and aspect ratio (the width divided by the height) can also be set. If you have RISC&nbsp;OS&nbsp;3.5 or later, <icon>Use desktop font</icon> will ignore these choices and use the currently selected desktop font; if the System font is being used then the first set of choices will still be used.
+The remaining options on this pane control the types of help message to be displayed. <icon>Show help for window furniture</icon> allows the user to decide whether or not help should be shown for the furniture around the edge of a window. If this is off, the potentially distracting messages will not appear. This can be temporarily overridden by the <menu>Show all</menu> option in the iconbar menu.
 
-All the choices are stored in a file called <file>Choices</file>. Depending on whether the machine has a new Boot structure, this will either be at <file>Choices:Float.Choices</file> or at <file>!Float.Choices</file>. The default options can be restored by deleting this file; you should always do this before letting anyone have a copy of <cite>Float</cite> if the file is stored inside the application. Note that if all the options are default there may not be a <file>Choices</file> file present at all.
+<icon>Show help over iconbar</icon> selects whether or not help is given for the icons on the iconbar. When on, help is given for all the icons (with the information being &lsquo;made up&rsquo; for those applications who do not provide help if the <icon>Show default message</icon> option is ticked). This setting is ignored (with messages being displayed) if <menu>Show all</menu> is ticked in the iconbar menu.
+
+<icon>Show default message</icon> determines whether or not <cite>Float</cite> will make up messages for applications not responding to the help requests. This message will just identify the application that the window (or iconbar icon) belongs to. If <menu>Show all</menu> in the iconbar menu is ticked, these messages will appear regardless of this setting.
+
+
+<subhead title="Appearance options">
+
+The <icon>Appearance</icon> tab contains options relating to the appearance of the help message pane.
+
+The <icon>Font</icon> section selects the font used to display the help text. This can be changed by clicking <mouse>select</mouse> on the pop-up menu icon to the right of the <icon>Font</icon> field; its size and aspect ratio (the width divided by the height) can also be set. If you have RISC&nbsp;OS&nbsp;3.5 or later, then ticking <icon>Use desktop font</icon> will ignore these choices and use the currently selected desktop font; if the desktop font is the System font, then the font set in <cite>Float</cite>&rsquo;s choices will still be used.
+
+The <icon>Colours</icon> section specifies the colours which will be used when drawing the help panes. <icon>Text</icon> sets the colour for the text and pane borders, while <icon>Background</icon> sets the colour used for the the pane background. If <icon>Draw shadows</icon> is ticked, then <icon>Shadow</icon> sets the colour for the drop-shadows behind the panes. For each colour, clicking <mouse>select</mouse> on the pop-up menu button to the right of the field will allow a new colour to be selected from the Wimp&rsquo;s palette.
+
+The <icon>Draw shadows</icon> switch determines whether to draw drop shadows behind the help panes. When present, these are a fixed size and appear as if the light is from the top left of the screen.
+
+
+<subhead title="Task Ignore options">
+
+The <icon>Ignore Tasks</icon> section allows <cite>Float</cite> to be configured to ignore help messages from certain applications; the <icon>Ignore</icon> section contains a list of tasks which are currently being ignored.
+
+To add a task to the list, enter its name in the field below the list (at the base of the <icon>Ignore</icon> section, to the left of the <icon>Add</icon> button) and click on <icon>Add</icon>. The name must appear <em>exactly</em> as it does in the <cite>Task Manager</cite>&rsquo;s display, with all spacing, punctuation or control characters reproduced exactly. To make this easier to achieve, the pop-up menu button to the right of the field gives a list of the names of all the applications which are currently running. Task names can be selected from this menu to insert them into the field (after which, <icon>Add</icon> must be clicked to add the name to the list in the usual way).
+
+To remove applications from the list, select their entries (by clicking <mouse>select</mouse> and <mouse>adjust</mouse> in the usual way) and click on <icon>Remove</icon>.
+
+As with the other options for restricting the help messages which are presented, the contents of the ignore list will itself be ignored (such that help will be shown for all applications) if <menu>Show all</menu> is ticked in the iconbar menu.
 
 
 <subhead title="Other options">
+
+All of the choices are stored in a file called <file>Choices</file>. Depending on whether the machine has a new Boot structure, this will either be at <file>Choices:Float.Choices</file> or at <file>!Float.Choices</file>. The default options can be restored by deleting this file; you should always do this before letting anyone have a copy of <cite>Float</cite> if the file is stored inside the application. Note that if all the options are default there may not be a <file>Choices</file> file present at all.
 
 Some options are not available from the <window>choices window</window>, but these can be added manually to the <file>Choices</file> file using a text editor. One choice occupies a line, with the option name being followed by a colon and the value. The extra options that you can specify here are as follows:
 
@@ -198,24 +223,21 @@ How far the mouse can be moved in any direction before the bubble gets closed, m
 How many centiseconds between WIMP idle poll requests. This value can be increased to reduce the overhead on a slower machine, at the expense of responsiveness. Default is 5.
 </definition>
 
-<definition target="Ignore tasks">
-Specifies a list of tasks that get ignored by <cite>Float</cite>. This allows common messages (for example those from the <cite>Filer</cite> and <cite>Pinboard</cite>) to be hidden. The names are given in a comma separated list of task names, for example <code>Filer, Pinboard</code>. Default is no tasks. The <menu>Show all</menu> option in the icon-bar menu will override this option, so that help is shown for all tasks.
-</definition>
 
-If there is no <file>Choices</file> file, create a new one using a text editor such as <cite>Edit</cite>, <cite>Zap</cite> or <cite>StrongEd</cite> and save it as <file>!Float.Choices</file>. Lines starting with a <code>#</code> are comments. An example file might be:
+If there is no <file>Choices</file> file, create a new one by opening the <window>Choices</window> dialogue and clicking on <icon>Save</icon>: this will place the file in the correct location for the system it is running on.
+
+Lines in the file starting with a <code>#</code> are comments. An example file might be:
 
 <codeblock>
 # >Choices
 #
 # An example file
 
-Poll delay:   10
-Ignore tasks: Filer, Pinboard, Task Manager, Floating Help
+Poll delay: 10
+Mouse jitter: 16
 </codeblock>
 
 <cite>Float</cite> will need to be reloaded to make changes made to the <file>Choices</file> file take effect.
-
-Some of these &lsquo;extra&rsquo; options will be given a proper front-end in the <window>choices window</window> in a future version.
 
 </chapter>
 
@@ -247,8 +269,6 @@ The following is a list of ideas that will hopefully be added to future versions
 
 <list>
 <li>Checking the icon below the pointer to stop help repeatedly appearing over the same icon or window background.
-
-<li>Improve the Choices interface, to include all the available options.
 </list>
 
 </chapter>
@@ -280,7 +300,7 @@ The following is a list of ideas that will hopefully be added to future versions
 <li>Fixed problems with different help abbreviations in different versions of RISC&nbsp;OS.
 <li>Fixed bug causing lockup for null help texts.
 <li>Added option to hide help from window furniture.
-<li>Added <mouse>adjust</mouse> click on icon-bar to open Choices window.
+<li>Added <mouse>adjust</mouse> click on iconbar to open Choices window (Ticket #3).
 </list>
 
 
@@ -289,7 +309,7 @@ The following is a list of ideas that will hopefully be added to future versions
 <list>
 <li>Added task handle checking to allow specific tasks to be ignored.
 <li>Moved more hard-coded text to the Messages file.
-<li>Added option to hide help from the icon bar.
+<li>Added option to hide help from the iconbar.
 <li>Correct internationalisation added, including automatic resource location.
 </list>
 
@@ -340,7 +360,7 @@ The following is a list of ideas that will hopefully be added to future versions
 <list>
 <li>Now uses ROM Messages for token expansion and furniture messages so it will work &lsquo;out of the box&rsquo; on any version of RISC&nbsp;OS (thanks to Justin Fletcher for pointing this out).
 <li>Possible bug with Messages file fixed.
-<li>Help file linked to icon-bar menu.
+<li>Help file linked to iconbar menu.
 <li>Templates tidied up for RISC&nbsp;OS&nbsp;4.
 </list>
 
@@ -371,7 +391,7 @@ The following is a list of ideas that will hopefully be added to future versions
 
 <list>
 <li>Hopefully fixed problems which allowed the Desktop font to be selected on RISC&nbsp;OS&nbsp;3.1.
-<li>Stopped the state of the icon-bar icon getting confused when the choices were applied (ie. it could show on when actually off).
+<li>Stopped the state of the iconbar icon getting confused when the choices were applied (ie. it could show on when actually off).
 </list>
 
 
@@ -414,7 +434,7 @@ The following is a list of ideas that will hopefully be added to future versions
 <subhead title="0.30 (25 June 2002)">
 
 <list>
-<li>&lsquo;Show all&rsquo; option added to icon-bar menu.
+<li>&lsquo;Show all&rsquo; option added to iconbar menu.
 </list>
 
 
@@ -465,7 +485,10 @@ Development release for testing and feedback.
 <list>
 <li>Added <icon>Website</icon> button to <window>Program Info</window> window.
 <li>Changed error system to use Locate 1&rsquo;s WimpError library.
-<li>Added <menu>Help</menu> entry to iconbar menu.
+<li>Added <menu>Help</menu> entry to iconbar menu (Ticket #480).
+<li>Interactive help code is more tolerant of unexpected input (Ticket #244).
+<li>New Choices interface implemented, with facility to set applications to be ignored.
+<li>
 </list>
 
 </chapter>
