@@ -26,7 +26,7 @@ menu(icon_bar_menu, "Float")
 	item("Info") {
 		d_box(info_window);
 	}
-	item("Help...") {
+	item("Help") {
 		dotted;
 	}
 	item("Choices...");
