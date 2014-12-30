@@ -61,6 +61,8 @@ PROCclose_down
 END
 
 
+
+
 REM Poll the Wimp using Wimp_PollIdle and process the returned reason code.
 :
 DEF PROCpoll
@@ -74,15 +76,17 @@ NextPoll% += poll_delay%
 CASE reason% OF
 	WHEN 0		: PROCidle_event
 	WHEN 1		: IF NOT FNignore_process_redraw(b%) THEN PROCredraw_bubble
-	WHEN 2		: SYS "Wimp_OpenWindow",, b%
-	WHEN 3		: SYS "Wimp_CloseWindow",, b%
-	WHEN 6		: PROCmouse_click
+	WHEN 2		: SYS "Wimp_OpenWindow",,b%
+	WHEN 3		: SYS "Wimp_CloseWindow",,b%
+	WHEN 6		: PROCmouse_click(b%)
 	WHEN 8		: PROCkeypress_handler(b%)
-	WHEN 9		: PROCmenu_selection
-	WHEN 17, 18	: PROCwimp_message
-	WHEN 19		: PROCbounced_message
+	WHEN 9		: PROCmenu_selection(b%)
+	WHEN 17, 18	: PROCwimp_message(b%)
+	WHEN 19		: PROCbounced_message(b%)
 ENDCASE
 ENDPROC
+
+
 
 
 REM Handle idle events from the Wimp: monitor the mouse and produce help bubbles
@@ -90,18 +94,21 @@ REM as requred.
 :
 DEF PROCidle_event
 LOCAL still_time%, significant_movement%, window_change%, icon_change%
-LOCAL key_pressed%, mouse_pressed%, mouse_released%
+LOCAL key_pressed%, mouse_pressed%, mouse_released%, pointer%
 
 REM Get the pointer position and set up some variables to idicate the current state.
 REM significant_movement% is TRUE if the mouse has moved more than a given amount.
 REM window_icon_change% is TRUE if the window or icon under the pointer has changed since the last
 REM poll, key_pressed% is TRUE if a key or mouse button has been pressed.
 
-SYS "Wimp_GetPointerInfo",, b%+20
+pointer% = FNmem_stack(20)
+IF pointer% = 0 THEN ENDPROC
 
-significant_movement% = (ABS(b%!20 - mouse_x%) > mouse_jitter% OR ABS(b%!24 - mouse_y%) > mouse_jitter%)
-window_change% = (mouse_window% <> b%!32)
-icon_change% = (mouse_icon% <> b%!36)
+SYS "Wimp_GetPointerInfo",,pointer%
+
+significant_movement% = (ABS(pointer%!0 - mouse_x%) > mouse_jitter% OR ABS(pointer%!4 - mouse_y%) > mouse_jitter%)
+window_change% = (mouse_window% <> pointer%!12)
+icon_change% = (mouse_icon% <> pointer%!16)
 key_pressed% = FNcode_key_pressed
 mouse_pressed% = FNcode_mouse_pressed
 mouse_released% = FNcode_mouse_released
@@ -119,8 +126,8 @@ IF bubble_open% THEN
 	CASE TRUE OF
 	WHEN significant_movement%
 		PROCclose_bubble
-		mouse_x% = b%!20
-		mouse_y% = b%!24
+		mouse_x% = pointer%!0
+		mouse_y% = pointer%!4
 	WHEN window_change% OR icon_change%
 		PROCclose_bubble
 	WHEN (key_pressed% AND hide_on_click%)
@@ -134,10 +141,10 @@ REM If the window or icon has changed, or there has been "significant" movement
 REM of the pointer, update the details and decide whether to open a new bubble.
 
 IF window_change% OR icon_change% OR significant_movement% THEN
-	mouse_window% = b%!32
-	mouse_icon% = b%!36
-	mouse_x% = b%!20
-	mouse_y% = b%!24
+	mouse_window% = pointer%!12
+	mouse_icon% = pointer%!16
+	mouse_x% = pointer%!0
+	mouse_y% = pointer%!4
 	SYS "OS_ReadMonotonicTime" TO mouse_time%
 	IF NOT (hide_across_drags% AND mouse_drag%) THEN waiting_to_open% = display_bubbles%
 ENDIF
@@ -153,41 +160,50 @@ IF waiting_to_open% THEN
 	IF key_pressed% THEN waiting_to_open% = FALSE
 	IF still_time% > bubble_delay% THEN
 		waiting_to_open% = FALSE
-		PROCget_help_text(b% + 20)
+		PROCget_help_text(pointer%)
 	ENDIF
 ENDIF
+
+PROCmem_free(pointer%)
 ENDPROC
 
 
-REM Respond to mouse clicks reported by the Wimp.
+
+
+REM Respond to mouse click events from the Wimp.
+REM
+REM \param block%		Pointer to the mouse click event block.
 :
-DEF PROCmouse_click
+DEF PROCmouse_click(block%)
 
 REM Pass the event details around any code modules that might be interested.
 
-IF FNchoices_process_mouse(b%) THEN ENDPROC
-IF FNignore_process_mouse(b%) THEN ENDPROC
+IF FNchoices_process_mouse(block%) THEN ENDPROC
+IF FNignore_process_mouse(block%) THEN ENDPROC
 
 REM If we're still here, try to handle the event directly.
 
-CASE b%!12 OF
+CASE block%!12 OF
 WHEN -2
-	CASE b%!8 OF
+	CASE block%!8 OF
 	WHEN 4
 		PROCset_help_state(NOT display_bubbles%)
 	WHEN 2
 		PROCmenu_set_state(IconbarMenu%, 3, show_all_help%, FALSE)
-		PROCmenu_create_iconbar(IconbarMenu%, !b%)
+		PROCmenu_create_iconbar(IconbarMenu%, !block%)
 	WHEN 1
-		PROCchoices_open_window(!b%, b%!4)
+		PROCchoices_open_window(!block%, block%!4)
 	ENDCASE
 
 WHEN ColoursWindow%
-	IF b%!16 >= 1 THEN PROCchoices_colour_selection(b%!16 - 1)
+	IF block%!16 >= 1 THEN PROCchoices_colour_selection(block%!16 - 1)
 	PROCwindow_close(ColoursWindow%)
 
 WHEN InfoWindow%
-	IF b%!16 = 8 THEN PROCurl_launch(FNmessage_lookup("SupportURL")) : PROCmenu_create(-1,0,0)
+	IF block%!16 = 8 THEN
+		PROCurl_launch(FNmessage_lookup("SupportURL"))
+		PROCmenu_create(-1, 0, 0)
+	ENDIF
 ENDCASE
 ENDPROC
 
@@ -208,9 +224,13 @@ SYS "Wimp_ProcessKey", block%!24
 ENDPROC
 
 
-REM Respond to menu selection events.
+
+
+REM Respond to menu selection events from the Wimp.
+REM
+REM \param block%		Pointer to the menu selection event block.
 :
-DEF PROCmenu_selection
+DEF PROCmenu_selection(block%)
 LOCAL re_open_menu%, font_name$
 
 REM Check if ADJUST was used to make the selection.
@@ -222,7 +242,7 @@ REM Act on the menu choice.
 
 CASE FNmenu_current_handle OF
 WHEN IconbarMenu%
-	CASE !b% OF
+	CASE !block% OF
 	WHEN 1
 		OSCLI("%Filer_Run Float:!Help")
 	WHEN 2
@@ -235,7 +255,7 @@ WHEN IconbarMenu%
 	ENDCASE
 
 WHEN FontMenu%
-	SYS "Font_DecodeMenu", 0, FontMenu%, b%, q%, 255
+	SYS "Font_DecodeMenu", 0, FontMenu%, block%, q%, 255
 	SYS "XOS_GenerateError", q% TO font_name$
 	PROCchoices_font_menu_selection(font_name$)
 
@@ -252,7 +272,7 @@ WHEN FontMenu%
 	ENDIF
 
 WHEN TaskMenu%
-	PROCchoices_task_menu_selection(FNtaskmenu_decode(!b%))
+	PROCchoices_task_menu_selection(FNtaskmenu_decode(!block%))
 
 	REM NB. Reopening the menu relies on the fact that we do not bother
 	REM rebuilding the menu (because there's no tick, and we ignore the
@@ -278,19 +298,24 @@ ENDIF
 ENDPROC
 
 
-REM Respond to Wimp message events.
-LOCAL task_name$
+
+
+REM Respond to user message events from the Wimp.
+REM
+REM \param message%		Pointer to the message block.
 :
-DEF PROCwimp_message
-CASE b%!16 OF
+DEF PROCwimp_message(message%)
+LOCAL task_name$
+
+CASE message%!16 OF
 WHEN &0
 	quit%=TRUE
 
 WHEN &502
-	PROCsend_interactive_help(b%)
+	PROCsend_interactive_help(message%)
 
 WHEN &503
-	IF (NOT FNignore_task(b%!4)) OR show_all_help% THEN PROCexpand_text(b%+20)
+	IF (NOT FNignore_task(message%!4)) OR show_all_help% THEN PROCexpand_text(message% + 20)
 
 WHEN &504
 	PROCmessage_help_enable
@@ -299,14 +324,14 @@ WHEN &400C1
 	PROCnew_mode
 
 WHEN &400C2
-	SYS "XOS_GenerateError", b%+28 TO task_name$
-	PROCignore_task_starting(b%!4, task_name$)
+	SYS "XOS_GenerateError", message% + 28 TO task_name$
+	PROCignore_task_starting(message%!4, task_name$)
 
 WHEN &400C3
-	PROCignore_task_quitting(b%!4)
+	PROCignore_task_quitting(message%!4)
 
 WHEN &400C9
-	CASE b%!20 OF
+	CASE message%!20 OF
 	WHEN FontMenu%
 		PROCdelete_font_menu
 		FontMenu% = 0
@@ -321,20 +346,24 @@ WHEN &400CF
 	PROCfind_font
 
 WHEN &4E383
-	PROCurl_bounce(b%)
+	PROCurl_bounce(message%)
 ENDCASE
 ENDPROC
 
 
-REM Handle bounced Wimp messages
+
+
+REM Respond to bounced message events from the Wimp.
+REM
+REM \param message%		Pointer to the message block.
 :
-DEF PROCbounced_message
-CASE b%!16 OF
+DEF PROCbounced_message(message%)
+CASE message%!16 OF
 WHEN &502
 	IF show_default_help% OR show_all_help% THEN PROCmake_default_task_help(HelpedTaskHandle%, IconBarHelp%)
 
 WHEN &4AF80
-	PROCurl_bounce(b%)
+	PROCurl_bounce(message%)
 ENDCASE
 ENDPROC
 
