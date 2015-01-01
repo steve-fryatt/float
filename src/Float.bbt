@@ -50,9 +50,9 @@ ON ERROR result% = FNwimperror_program : END
 
 PROCinitialise
 
-ON ERROR quit% = FNwimperror_program
+ON ERROR Quit% = FNwimperror_program
 
-WHILE NOT quit%
+WHILE NOT Quit%
 	PROCpoll
 ENDWHILE
 
@@ -75,7 +75,7 @@ NextPoll% += poll_delay%
 
 CASE reason% OF
 	WHEN 0		: PROCidle_event
-	WHEN 1		: IF NOT FNignore_process_redraw(b%) THEN PROCredraw_bubble
+	WHEN 1		: IF NOT FNignore_process_redraw(b%) THEN PROCredraw_bubble(b%)
 	WHEN 2		: SYS "Wimp_OpenWindow",,b%
 	WHEN 3		: SYS "Wimp_CloseWindow",,b%
 	WHEN 6		: PROCmouse_click(b%)
@@ -106,28 +106,28 @@ IF pointer% = 0 THEN ENDPROC
 
 SYS "Wimp_GetPointerInfo",,pointer%
 
-significant_movement% = (ABS(pointer%!0 - mouse_x%) > mouse_jitter% OR ABS(pointer%!4 - mouse_y%) > mouse_jitter%)
-window_change% = (mouse_window% <> pointer%!12)
-icon_change% = (mouse_icon% <> pointer%!16)
+significant_movement% = (ABS(pointer%!0 - LastMouseX%) > mouse_jitter% OR ABS(pointer%!4 - LastMouseY%) > mouse_jitter%)
+window_change% = (LastMouseWindow% <> pointer%!12)
+icon_change% = (LastMouseIcon% <> pointer%!16)
 key_pressed% = FNcode_key_pressed
 mouse_pressed% = FNcode_mouse_pressed
 mouse_released% = FNcode_mouse_released
 
-IF mouse_pressed% THEN mouse_drag% = TRUE
-IF mouse_drag% AND mouse_released% AND NOT significant_movement% THEN mouse_drag% = FALSE
+IF mouse_pressed% THEN MouseDragging% = TRUE
+IF MouseDragging% AND mouse_released% AND NOT significant_movement% THEN MouseDragging% = FALSE
 
 SYS "OS_ReadMonotonicTime" TO current_time%
-still_time% = (current_time% - mouse_time%)
+still_time% = (current_time% - LastMouseStillTime%)
 
 REM If there's a bubble open, then we need to decide if it needs to move or
 REM or close as a result of events.
 
-IF bubble_open% THEN
+IF BubbleOpen% THEN
 	CASE TRUE OF
 	WHEN significant_movement%
 		PROCclose_bubble
-		mouse_x% = pointer%!0
-		mouse_y% = pointer%!4
+		LastMouseX% = pointer%!0
+		LastMouseY% = pointer%!4
 	WHEN window_change% OR icon_change%
 		PROCclose_bubble
 	WHEN (key_pressed% AND hide_on_click%)
@@ -141,25 +141,25 @@ REM If the window or icon has changed, or there has been "significant" movement
 REM of the pointer, update the details and decide whether to open a new bubble.
 
 IF window_change% OR icon_change% OR significant_movement% THEN
-	mouse_window% = pointer%!12
-	mouse_icon% = pointer%!16
-	mouse_x% = pointer%!0
-	mouse_y% = pointer%!4
-	SYS "OS_ReadMonotonicTime" TO mouse_time%
-	IF NOT (hide_across_drags% AND mouse_drag%) THEN waiting_to_open% = display_bubbles%
+	LastMouseWindow% = pointer%!12
+	LastMouseIcon% = pointer%!16
+	LastMouseX% = pointer%!0
+	LastMouseY% = pointer%!4
+	SYS "OS_ReadMonotonicTime" TO LastMouseStillTime%
+	IF NOT (hide_across_drags% AND MouseDragging%) THEN WaitingToOpen% = display_bubbles%
 ENDIF
 
 REM Detect the end of a mouse drag, after using the drag status.
 
-IF mouse_released% THEN mouse_drag% = FALSE
+IF mouse_released% THEN MouseDragging% = FALSE
 
 REM If, after everything else, we're still waiting to open a new bubble, request
 REM the details and thereby kick off a new bubble creation process.
 
-IF waiting_to_open% THEN
-	IF key_pressed% THEN waiting_to_open% = FALSE
+IF WaitingToOpen% THEN
+	IF key_pressed% THEN WaitingToOpen% = FALSE
 	IF still_time% > bubble_delay% THEN
-		waiting_to_open% = FALSE
+		WaitingToOpen% = FALSE
 		PROCget_help_text(pointer%)
 	ENDIF
 ENDIF
@@ -189,7 +189,7 @@ WHEN -2
 	WHEN 4
 		PROCset_help_state(NOT display_bubbles%)
 	WHEN 2
-		PROCmenu_set_state(IconbarMenu%, 3, show_all_help%, FALSE)
+		PROCmenu_set_state(IconbarMenu%, 3, ShowAllHelp%, FALSE)
 		PROCmenu_create_iconbar(IconbarMenu%, !block%)
 	WHEN 1
 		PROCchoices_open_window(!block%, block%!4)
@@ -248,10 +248,10 @@ WHEN IconbarMenu%
 	WHEN 2
 		PROCchoices_open_window(!q%, q%!4)
 	WHEN 3
-		show_all_help% = NOT show_all_help%
-		PROCmenu_set_state(IconbarMenu%, 3, show_all_help%, FALSE)
+		ShowAllHelp% = NOT ShowAllHelp%
+		PROCmenu_set_state(IconbarMenu%, 3, ShowAllHelp%, FALSE)
 	WHEN 4
-		quit%=TRUE
+		Quit% = TRUE
 	ENDCASE
 
 WHEN FontMenu%
@@ -309,13 +309,13 @@ LOCAL task_name$
 
 CASE message%!16 OF
 WHEN &0
-	quit%=TRUE
+	Quit% = TRUE
 
 WHEN &502
 	PROCsend_interactive_help(message%)
 
 WHEN &503
-	IF (NOT FNignore_task(message%!4)) OR show_all_help% THEN PROCexpand_text(message% + 20)
+	IF (NOT FNignore_task(message%!4)) OR ShowAllHelp% THEN PROCexpand_text(message% + 20)
 
 WHEN &504
 	PROCmessage_help_enable
@@ -360,7 +360,7 @@ REM \param message%		Pointer to the message block.
 DEF PROCbounced_message(message%)
 CASE message%!16 OF
 WHEN &502
-	IF show_default_help% OR show_all_help% THEN PROCmake_default_task_help(HelpedTaskHandle%, IconBarHelp%)
+	IF show_default_help% OR ShowAllHelp% THEN PROCmake_default_task_help(HelpedTaskHandle%, IconBarHelp%)
 
 WHEN &4AF80
 	PROCurl_bounce(message%)
@@ -379,59 +379,58 @@ DEF PROCinitialise
 :
 REM Initialise the program, including the WIMP.
 :
-LOCAL os_version%,token_file$,file%,var%,len%,resources_path$,task_name$
+LOCAL os_version%, token_file$, file%, var%, len%, resources_path$, task_name$, task_sprite$, sprite_area%
 :
 REM Set up the global data blocks and the parameters needed for WIMP registration.
 :
 DIM b% 4000, q% 255, a% 255
 :
 REM Find the correct resources for the current territory.
-:
-resources_path$=FNresources_find_territory_folder("Float:Resources")
-:
+
+resources_path$ = FNresources_find_territory_folder("Float:Resources")
+
 REM Allocate space and load the message file into memory.
-:
-PROCmessage_initialise(resources_path$+"Messages")
-:
-task_name$=FNmessage_lookup("TaskName")
-task_sprite$=FNmessage_lookup("TaskSpr")
-PROCwimperror_initialise(task_name$,task_sprite$)
-wimp_needed%=310
-:
+
+PROCmessage_initialise(resources_path$ + "Messages")
+
+task_name$  =FNmessage_lookup("TaskName")
+task_sprite$ = FNmessage_lookup("TaskSpr")
+PROCwimperror_initialise(task_name$, task_sprite$)
+
 REM Choose what messages we accept from the WIMP.
-:
-!q%=&502     : REM Message_HelpRequest
-q%!4=&503    : REM Message_HelpReply
-q%!8=&504    : REM Message_HelpEnable
-q%!12=&400C1 : REM Message_ModeChange
-q%!16=&400C2 : REM Message_TaskInitialise
-q%!20=&400C3 : REM Message_TaskCloseDown
-q%!24=&400C9 : REM Message_MenusDeleted
-q%!28=&400CF : REM Message_FontChanged
+
+!q%=&502	: REM Message_HelpRequest
+q%!4=&503	: REM Message_HelpReply
+q%!8=&504	: REM Message_HelpEnable
+q%!12=&400C1	: REM Message_ModeChange
+q%!16=&400C2	: REM Message_TaskInitialise
+q%!20=&400C3	: REM Message_TaskCloseDown
+q%!24=&400C9	: REM Message_MenusDeleted
+q%!28=&400CF	: REM Message_FontChanged
 q%!32=&4AF80
 q%!36=&4E383
-q%!40=0      : REM Message_Quit
-:
+q%!40=0		: REM Message_Quit
+
 REM Register as a WIMP task.
-:
-SYS "Wimp_Initialise", wimp_needed%, &4B534154, task_name$, q% TO TaskHandle%
-:
+
+SYS "Wimp_Initialise", 310, &4B534154, task_name$, q% TO TaskHandle%
+
 REM Set the quit flag to false so we don't quit immediately.  Get the current time ready for
 REM calling Wimp_PollIdle - this will cause the first null poll to be returned immediately.
-:
-quit%=FALSE
+
+Quit% = FALSE
 SYS "OS_ReadMonotonicTime" TO NextPoll%
-:
+
 REM Initialise the WimpSlot
-:
+
 PROCmem_initialise
-:
+
 REM Load the correct set of message tokens for the version of RISC OS we are running on at the
 REM moment.
-:
+
 REM Load a suitable file of message tokens.  First try in ROM, then in !Boot, then look in our own collection
 REM of versions and finally fall back onto the RISC OS 3.1 data (Tokens.164).
-:
+
 token_file$="Resources:$.Resources.Help.Messages"
 SYS "OS_File",17,token_file$ TO file%
 IF file%=0 THEN
@@ -453,132 +452,132 @@ IF flags% AND 1 THEN token_buffer%=0 ELSE DIM token_buffer% size%
 SYS "OS_Module",6,,,17+LEN(token_file$) TO ,,tokens%
 $(tokens%+16)=token_file$
 SYS "MessageTrans_OpenFile",tokens%,tokens%+16,token_buffer%
-:
+
 REM Allocate space for the indirected icon data and load the templaes file into memory, creating the
 REM windows as we go.
-:
-ind_size%=3000
+
+ind_size% = 3000
 DIM ind_area% ind_size%
-:
-PROCtemplate_open(resources_path$+"Templates")
-:
+
+PROCtemplate_open(resources_path$ + "Templates")
+
 PROCchoices_initialise
 PROCignore_initialise
 PROCtaskmenu_initialise
-:
-PROCtemplate_load("Panel",b%,ind_area%,ind_size%,-1)
+
+PROCtemplate_load("Panel", b%, ind_area%, ind_size%, -1)
 SYS "Wimp_CreateWindow",,b% TO BubbleWindow%
-PROCtemplate_load("ProgInfo",b%,ind_area%,ind_size%,-1)
+PROCtemplate_load("ProgInfo", b%, ind_area%, ind_size%, -1)
 SYS "Wimp_CreateWindow",,b% TO InfoWindow%
-PROCtemplate_load("Colours",b%,ind_area%,ind_size%,-1)
+PROCtemplate_load("Colours", b%, ind_area%, ind_size%, -1)
 SYS "Wimp_CreateWindow",,b% TO ColoursWindow%
-:
+
 PROCtemplate_close
-:
-$FNicon_indirection(InfoWindow%,4)=CHR$(169) + " Stephen Fryatt, 1999-" + MID$(build_date$, 8)
-$FNicon_indirection(InfoWindow%,6)=build_version$+" ("+build_date$+")"
-:
+
+$FNicon_indirection(InfoWindow%, 4) = CHR$(169) + " Stephen Fryatt, 1999-" + MID$(build_date$, 8)
+$FNicon_indirection(InfoWindow%, 6) = build_version$ + " (" + build_date$ + ")"
+
 REM Load the sprites file into memory.
-:
-sprite_area%=FNwimpsprite_load_user_sprites("Float:Sprites")
-:
+
+sprite_area% = FNwimpsprite_load_user_sprites("Float:Sprites")
+
 REM Load the menu definitions into memory and create the menus.
-:
+
 PROCmenu_initialise
-!q%=InfoWindow%
-PROCmenu_load_templates(resources_path$+"Menus",q%)
+!q% = InfoWindow%
+PROCmenu_load_templates(resources_path$ + "Menus", q%)
 IconbarMenu% = !q%
 FontMenu% = 0
 TaskMenu% = 0
-:
+
 REM Set up all the global variables
-:
-mouse_x%=0            : REM The last known mouse X position
-mouse_y%=0            : REM The last known mouse Y position
-mouse_time%=0         : REM When the mouse was last known to be 'still'
-mouse_window%=0       : REM The last window the mouse was over
-mouse_icon%=0         : REM The last icon the mouse was over
-mouse_drag%=FALSE     : REM TRUE is the mouse is thought to be dragging
-bubble_open%=FALSE    : REM TRUE if a bubble is open
-waiting_to_open%=TRUE : REM TRUE if a bubble is still waiting to be opened
-bubble_width%=0       : REM The width (in OS units) of the current bubble
-bubble_height%=0      : REM The height (in OS units) of the current bubble
-bubble_lines%=0       : REM The number of lines of text in the current bubble
-show_all_help%=FALSE  : REM TRUE if we are to ignore the selective help settings in Choices.
-:
+
+LastMouseX% = 0		: REM The last known mouse X position
+LastMouseY% = 0		: REM The last known mouse Y position
+LastMouseStillTime% = 0	: REM When the mouse was last known to be 'still'
+LastMouseWindow% = 0	: REM The last window the mouse was over
+LastMouseIcon% = 0	: REM The last icon the mouse was over
+MouseDragging% = FALSE	: REM TRUE if the mouse is thought to be dragging
+BubbleOpen% = FALSE	: REM TRUE if a bubble is open
+WaitingToOpen% = TRUE	: REM TRUE if a bubble is still waiting to be opened
+BubbleWidth% = 0	: REM The width (in OS units) of the current bubble
+BubbleHeight% = 0	: REM The height (in OS units) of the current bubble
+BubbleLines% = 0	: REM The number of lines of text in the current bubble
+ShowAllHelp% = FALSE	: REM TRUE if we are to ignore the selective help settings in Choices.
+
 REM Allocate arrays and memory blocks.
-:
-help_text_size%=4095              : REM The size of the help text buffer
-DIM help_text% help_text_size%
-DIM font_block% 35
-max_lines%=1000                   : REM The maximum number of lines of text in a bubble
-DIM start%(max_lines%),length%(max_lines%),y_offset%(max_lines%)
-:
+
+HelpTextBufferSize% = 4095	: REM The size of the help text buffer
+DIM HelpTextBuffer% HelpTextBufferSize%
+MaxHelpLines% = 1000		: REM The maximum number of lines of text in a bubble
+DIM LineStart%(MaxHelpLines%), LineLength%(MaxHelpLines%), LineYOffset%(MaxHelpLines%)
+
 REM Determine if the desktop font exists.
-:
-SYS "XWimp_ReadSysInfo",8 TO ;flags%
-desktop_font_available%=((flags% AND 1)=0)
-:
+
+SYS "XWimp_ReadSysInfo", 8 TO ;flags%
+DesktopFontAvailable% = ((flags% AND 1)=0)
+
 REM Set up the default configuration and load any changes
-:
-PROCconfig_initialise(20,task_name$)
-:
-PROCconfig_init_boolean("Open bubbles",TRUE)
-PROCconfig_init_boolean("Close bubbles",TRUE)
-PROCconfig_init_boolean("Draw shadows",TRUE)
-PROCconfig_init_boolean("Hide over drags",TRUE)
-PROCconfig_init_boolean("Hide on clicks",TRUE)
+
+PROCconfig_initialise(20, task_name$)
+
+PROCconfig_init_boolean("Open bubbles", TRUE)
+PROCconfig_init_boolean("Close bubbles", TRUE)
+PROCconfig_init_boolean("Draw shadows", TRUE)
+PROCconfig_init_boolean("Hide over drags", TRUE)
+PROCconfig_init_boolean("Hide on clicks", TRUE)
 PROCconfig_init_boolean("Show tool help", TRUE)
 PROCconfig_init_boolean("Show bar help", TRUE)
 PROCconfig_init_boolean("Identify silent apps", FALSE)
-PROCconfig_init_real("Open delay",0.6)
-PROCconfig_init_real("Close delay",10)
-PROCconfig_init_integer("Foreground colour",7)
-PROCconfig_init_integer("Background colour",1)
-PROCconfig_init_integer("Shadow colour",6)
-PROCconfig_init_string("Font name","Homerton.Bold.Oblique")
-PROCconfig_init_real("Font size",10)
-PROCconfig_init_real("Font aspect",100)
-PROCconfig_init_boolean("Font use desktop",FALSE)
-PROCconfig_init_integer("Mouse jitter",8)
-PROCconfig_init_integer("Poll delay",5)
-PROCconfig_init_string("Ignore tasks","")
-:
-:
-choices_load$="Choices:Float.Choices"
-SYS "XOS_File",17,choices_load$ TO choices_type% ;flags%
+PROCconfig_init_real("Open delay", 0.6)
+PROCconfig_init_real("Close delay", 10)
+PROCconfig_init_integer("Foreground colour", 7)
+PROCconfig_init_integer("Background colour", 1)
+PROCconfig_init_integer("Shadow colour", 6)
+PROCconfig_init_string("Font name", "Homerton.Bold.Oblique")
+PROCconfig_init_real("Font size", 10)
+PROCconfig_init_real("Font aspect", 100)
+PROCconfig_init_boolean("Font use desktop", FALSE)
+PROCconfig_init_integer("Mouse jitter", 8)
+PROCconfig_init_integer("Poll delay", 5)
+PROCconfig_init_string("Ignore tasks", "")
+
+REM \TODO -- This probably needs to move into the Choices module so that
+REM choices_save$ can be a global variable inside that module.	
+
+choices_load$ = "Choices:Float.Choices"
+SYS "XOS_File",17, choices_load$ TO choices_type% ;flags%
 IF (flags% AND 1)<>0 OR choices_type%<>1 THEN choices_load$="Float:Choices"
 choices_save$=FNconfig_load_file(choices_load$)
-:
+
 REM Create all the config variables used in the program.
-:
+
 PROCchoices_sync
-:
+
 REM Set up the list of tasks to ignore.
-:
+
 PROCignore_load_tasks
-:
+
 REM Find the font we need to display the text and get the size of the screen mode.
-:
-SYS "Font_CacheAddr" TO font_manager_version%
+
 PROCfind_font
 PROCget_mode_size
-:
+
 REM Put an icon on the icon bar.
-:
+
 DIM bar_sprite% 10
-IF display_bubbles% THEN $bar_sprite%="on" ELSE $bar_sprite%="off"
-:
-!q%=-1
-q%!4=0
-q%!8=0
-q%!12=68
-q%!16=68
-q%!20=&311A
-q%!24=bar_sprite%
-q%!28=sprite_area%
-q%!32=10
-SYS "Wimp_CreateIcon",,q% TO bar_icon_handle%
+IF display_bubbles% THEN $bar_sprite% = "on" ELSE $bar_sprite% = "off"
+
+!q% = -1
+q%!4 = 0
+q%!8 = 0
+q%!12 = 68
+q%!16 = 68
+q%!20 = &311A
+q%!24 = bar_sprite%
+q%!28 = sprite_area%
+q%!32 = 10
+SYS "Wimp_CreateIcon",,q% TO IconbarIconHandle%
 :
 PROCcode_initialise
 ENDPROC
@@ -702,7 +701,7 @@ LOCAL message%
 REM If the window is the iconbar, there's nothing to do unless we're shoing
 REM help for iconbar icons.
 
-IF (pointer%!12 <= -2) AND (NOT show_ibar_help%) AND (NOT show_all_help%) THEN ENDPROC
+IF (pointer%!12 <= -2) AND (NOT show_ibar_help%) AND (NOT ShowAllHelp%) THEN ENDPROC
 
 REM If the icon is a standard icon or window work area, a Message_HelpRequest
 REM is sent to the appropriate task for more details.
@@ -728,7 +727,7 @@ IF pointer%!16 >= -1 THEN
 	SYS "Wimp_SendMessage", 18, message%, pointer%!12, pointer%!16 TO ,,HelpedTaskHandle%
 	PROCmem_free(message%)
 ELSE
-	IF pointer%!16 >= -14 AND pointer%!16 <= -2 AND (show_tool_help% OR show_all_help%) THEN
+	IF pointer%!16 >= -14 AND pointer%!16 <= -2 AND (show_tool_help% OR ShowAllHelp%) THEN
 		$b% = FNmessage_lookup("Furniture.I" + STR$(ABS(pointer%!16)))
 		PROCexpand_text(b%)
 	ENDIF
@@ -785,13 +784,13 @@ LOCAL o%, h%, c%, len%
 REM Start by 'escaping' the string, by expanding with the dictionary in the Messages file.
 REM
 REM For each craracter in the (control terminated) string, if it is NOT a '\' copy it straight
-REM in to the help_text% buffer and step on one.  If it is a '\', get the next charater and
-REM step on one more.  If the next character is a '\' as well, copy one '\' into the help_text%
+REM in to the HelpTextBuffer% buffer and step on one.  If it is a '\', get the next charater and
+REM step on one more.  If the next character is a '\' as well, copy one '\' into the HelpTextBuffer%
 REM buffer and move on one character.
 REM
 REM If the second character was NOT a '\', append it to a 'T' and look up the resulting token in
 REM the Messages file dictionary.  The call is asked to put the result straight into the
-REM help_text% buffer in the correct place, before the buffer pointer is moved on by the length
+REM HelpTextBuffer% buffer in the correct place, before the buffer pointer is moved on by the length
 REM of the result.
 :
 o%=0
@@ -803,14 +802,14 @@ REPEAT
  :
  IF CHR$(c%)<>"\" THEN
   IF (INSTR("€„ˆ‰Š‹",CHR$(c%))>0) AND (symbol_font%>0) THEN
-   help_text%?h%=26
-   help_text%?(h%+1)=symbol_font%
-   help_text%?(h%+2)=c%
-   help_text%?(h%+3)=26
-   help_text%?(h%+4)=display_font%
+   HelpTextBuffer%?h%=26
+   HelpTextBuffer%?(h%+1)=symbol_font%
+   HelpTextBuffer%?(h%+2)=c%
+   HelpTextBuffer%?(h%+3)=26
+   HelpTextBuffer%?(h%+4)=display_font%
    h%+=5
   ELSE
-   help_text%?h%=c%
+   HelpTextBuffer%?h%=c%
    h%+=1
   ENDIF
  ELSE
@@ -818,28 +817,28 @@ REPEAT
   o%+=1
   :
   IF CHR$(c%)="\" THEN
-   help_text%?h%=ASC("\")
+   HelpTextBuffer%?h%=ASC("\")
    h%+=1
   ELSE
-   SYS "XMessageTrans_Lookup",tokens%,"T"+CHR$(c%),help_text%+h%,help_text_size%-h% TO ,,,len%
+   SYS "XMessageTrans_Lookup",tokens%,"T"+CHR$(c%),HelpTextBuffer%+h%,HelpTextBufferSize%-h% TO ,,,len%
    h%+=len%
   ENDIF
  ENDIF
-UNTIL c%<32 OR h%>=help_text_size%
+UNTIL c%<32 OR h%>=HelpTextBufferSize%
 :
 REM If the expansion ended bacause the buffer was full, terminate with a message that makes this
 REM clear.
 :
-IF h%>=help_text_size% THEN
- $(help_text%+help_text_size%-27)="...|M[help text truncated]" : help_text%?(help_text_size%-1)=0
+IF h%>=HelpTextBufferSize% THEN
+ $(HelpTextBuffer%+HelpTextBufferSize%-27)="...|M[help text truncated]" : HelpTextBuffer%?(HelpTextBufferSize%-1)=0
 ELSE
- help_text%?(h%-1)=0
+ HelpTextBuffer%?(h%-1)=0
 ENDIF
 :
-REM Open the bubble on the screen with the string in the help_text% buffer.  This will need to be
+REM Open the bubble on the screen with the string in the HelpTextBuffer% buffer.  This will need to be
 REM GSTrans'd and formatted first.
 :
-PROCopen_bubble(help_text%)
+PROCopen_bubble(HelpTextBuffer%)
 ENDPROC
 :
 :
@@ -855,7 +854,10 @@ DEF PROCopen_bubble(text%)
 REM Given a pointer to a string needing to be GSTrans'd, do this and then open a bubble.
 :
 LOCAL line%,lines%,t%,widest%,y_offset%,actual_lines%,max_width%,width%,end%,length%,line_height%
-LOCAL r%,w%,double_end%,os_width%,os_height%,icon_bar_height%,x_pos%,y_pos%,shadow_size%
+LOCAL r%,w%,double_end%,os_width%,os_height%,icon_bar_height%,x_pos%,y_pos%,shadow_size%,font_block%
+:
+font_block% = FNmem_stack(36)
+IF font_block% = 0 THEN ENDPROC
 :
 REM The control terminated string is passed through a GSTrans function to 'un-escape' the '|'
 REM characters in it.  '|M' is treated specially, as it must be converted into string terminators
@@ -963,10 +965,10 @@ FOR line%=0 TO lines%
    IF length%=0 THEN widest%+=500
   UNTIL length%>0 OR ?t%=0 OR ?t%=13
   :
-  IF actual_lines%<=max_lines% AND length%>0 THEN
-   start%(actual_lines%)=t%
-   length%(actual_lines%)=length%
-   y_offset%(actual_lines%)=y_offset%
+  IF actual_lines%<=MaxHelpLines% AND length%>0 THEN
+   LineStart%(actual_lines%)=t%
+   LineLength%(actual_lines%)=length%
+   LineYOffset%(actual_lines%)=y_offset%
    actual_lines%+=1
    IF width%>max_width% THEN max_width%=width%
   ENDIF
@@ -975,7 +977,7 @@ FOR line%=0 TO lines%
   IF ?end%=32 THEN t%+=1
   :
   IF length%>0 THEN y_offset%+=line_height%
- UNTIL ?t%=0 OR actual_lines%>max_lines%
+ UNTIL ?t%=0 OR actual_lines%>MaxHelpLines%
  :
  IF length%>0 THEN y_offset%+=line_height%/3
  :
@@ -1025,7 +1027,7 @@ IF actual_lines% THEN
  :
  shadow_size%=draw_shadow%*-8
  :
- IF bubble_open% THEN PROCwindow_close(BubbleWindow%)
+ IF BubbleOpen% THEN PROCwindow_close(BubbleWindow%)
  :
  !q%=BubbleWindow%
  q%!4=x_pos%
@@ -1037,94 +1039,87 @@ IF actual_lines% THEN
  q%!28=-1
  SYS "Wimp_OpenWindow",,q%
  :
- bubble_width%=os_width%
- bubble_height%=os_height%
- bubble_lines%=actual_lines%
+ BubbleWidth%=os_width%
+ BubbleHeight%=os_height%
+ BubbleLines%=actual_lines%
  :
- IF bubble_open% THEN PROCwindow_force_redraw(BubbleWindow%)
- bubble_open%=TRUE
+ IF BubbleOpen% THEN PROCwindow_force_redraw(BubbleWindow%)
+ BubbleOpen%=TRUE
 ENDIF
+
+PROCmem_free(font_block%)
 ENDPROC
-:
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
-:
-DEF PROCredraw_bubble
-:
+
+
+
+
 REM Redraw the bubble window.
 REM
-REM The redraw loop is not optimised as bubbles are supposed to be on top and so the window should
-REM always be redrawn in one go.  In fact, the only real reason for a redraw is if F12, Return is
-REM pressed when a bubble is open (and then the transparent parts of the window will be wrong).
+REM The redraw loop is not optimised as bubbles are supposed to be on top and so
+REM the window should always be redrawn in one go.  In fact, the only real reason
+REM for a redraw after the initial drawing is if F12, Return is pressed when a
+REM bubble is open (and then the transparent parts of the window will be wrong).
+REM
+REM \param redraw%		Pointer to the redraw event block.
 :
-LOCAL shadow_size%,line_height%,x%,y%,x_in%,y_in%,more%,line%
-:
+DEF PROCredraw_bubble(redraw%)
+LOCAL shadow_size%, line_height%, x%, y%, x_in%, y_in%, more%, line%
+
 REM Calculate the size of the shadow and the line height in points (120% of fint size).
-:
-shadow_size%=draw_shadow%*-8
-line_height%=(font_size%*1000)/16*1.2
-:
+
+shadow_size% = draw_shadow% * -8
+line_height% = (font_size% * 1000) / 16 * 1.2
+
 REM Go into the WIMP redraw loop.
-:
-SYS "Wimp_RedrawWindow",,b% TO more%
-:
+
+SYS "Wimp_RedrawWindow",,redraw% TO more%
+
 WHILE more%
- :
- REM Calculate the position of the top left of the bubble window, converting this to millipoints
- REM and pointing to the bottom of the first line of text (fonts are painted from the baseline)
- :
- x%=b%!4-b%!20
- y%=b%!16-b%!24-4
- :
- SYS "Font_Converttopoints",,x%+8,y% TO ,x_in%,y_in%
- y_in%-=line_height%
- :
- REM If there is to be a shadow, drwa it.  Then draw the box as a filled rectangle overlaid by
- REM an open rectangle.
- :
- IF draw_shadow% THEN
-  SYS "Wimp_SetColour",shadow_colour%
-  RECTANGLE FILL x%+shadow_size%,y%-bubble_height%-shadow_size%,bubble_width%,bubble_height%
- ENDIF
- :
- SYS "Wimp_SetColour",background_colour%
- RECTANGLE FILL x%,y%-bubble_height%,bubble_width%,bubble_height%
- SYS "Wimp_SetColour",text_colour%
- RECTANGLE x%,y%-bubble_height%,bubble_width%,bubble_height%
- :
- REM Set the font colours and plot the text line by line.
- :
- SYS "Wimp_SetFontColours",,background_colour%,text_colour%
- :
- FOR line%=0 TO bubble_lines%-1
-  SYS "Font_Paint",display_font%,start%(line%),&380,x_in%,y_in%-y_offset%(line%),,,length%(line%)
- NEXT line%
- :
- SYS "Wimp_GetRectangle",,b% TO more%
+	REM Calculate the position of the top left of the bubble window,
+	REM converting this to millipoints and pointing to the bottom of the
+	REM first line of text (fonts are painted from the baseline)
+
+	x% = redraw%!4 - redraw%!20
+	y% = redraw%!16 - redraw%!24 - 4
+
+	SYS "Font_Converttopoints",,x%+8, y% TO , x_in%, y_in%
+	y_in% -= line_height%
+
+	REM If there is to be a shadow, drwa it.  Then draw the box as a filled
+	REM rectangle overlaid by an open rectangle.
+
+	IF draw_shadow% THEN
+		SYS "Wimp_SetColour", shadow_colour%
+		RECTANGLE FILL x% + shadow_size%, y% - BubbleHeight% - shadow_size%, BubbleWidth%, BubbleHeight%
+	ENDIF
+
+	SYS "Wimp_SetColour", background_colour%
+	RECTANGLE FILL x%, y% - BubbleHeight%, BubbleWidth%, BubbleHeight%
+	SYS "Wimp_SetColour", text_colour%
+	RECTANGLE x%, y% - BubbleHeight%, BubbleWidth%, BubbleHeight%
+
+	REM Set the font colours and plot the text line by line.
+
+	SYS "Wimp_SetFontColours",, background_colour%, text_colour%
+
+	FOR line% = 0 TO BubbleLines% - 1
+		SYS "Font_Paint", display_font%, LineStart%(line%), &380, x_in%, y_in% - LineYOffset%(line%),,,LineLength%(line%)
+	NEXT line%
+
+	SYS "Wimp_GetRectangle",,redraw% TO more%
 ENDWHILE
 ENDPROC
-:
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
+
+
+
+
+REM Close the help bubble, closing the backing window so the Wimp redraws the
+REM screen, then flag the bubble closed.
 :
 DEF PROCclose_bubble
-:
-REM Close the help bubble.
-REM
-REM Close the backing window so the WIMP redraws the screen, then flag the bubble closed.
-:
-IF bubble_open% THEN PROCwindow_close(BubbleWindow%)
-bubble_open%=FALSE
+
+IF BubbleOpen% THEN PROCwindow_close(BubbleWindow%)
+BubbleOpen% = FALSE
 ENDPROC
 :
 :
@@ -1151,7 +1146,7 @@ ELSE
  $bar_sprite%="off"
  PROCclose_bubble
 ENDIF
-PROCicon_redraw(-2,bar_icon_handle%)
+PROCicon_redraw(-2, IconbarIconHandle%)
 ENDPROC
 :
 :
@@ -1233,7 +1228,7 @@ REM ============================================================================
 :
 DEF FNbuild_font_menu
 :
-LOCAL menu_buf%,ind_buf%,menu_buf_size%,ind_buf_size%,fonts_message_file$,mess_buf%,menu_title%
+LOCAL menu_buf%,ind_buf%,menu_buf_size%,ind_buf_size%,fonts_message_file$,mess_buf%,menu_title%, font_manager_version%
 :
 SYS "Font_ListFonts",,0,(1<<19),,0,,0 TO ,,,menu_buf_size%,,ind_buf_size%
 
@@ -1242,6 +1237,8 @@ menu_buf% = FNmem_claim(menu_buf_size% + ind_buf_size%)
 IF menu_buf% <> 0 THEN
  ind_buf% = menu_buf% + menu_buf_size%
  SYS "Font_ListFonts",,menu_buf%, &280000, menu_buf_size%, ind_buf%, ind_buf_size%, FNchoices_font_menu_selected
+ :
+ SYS "Font_CacheAddr" TO font_manager_version%
  :
  IF font_manager_version%<=307 THEN
   fonts_message_file$="Resources:$.Resources.Fonts.Messages"
@@ -1287,7 +1284,7 @@ DEF PROCfind_font
 :
 using_desktop_font%=FALSE
 :
-IF desktop_font_available% AND font_desktop% THEN
+IF DesktopFontAvailable% AND font_desktop% THEN
  SYS "Wimp_ReadSysInfo",8 TO display_font%,symbol_font%
  using_desktop_font%=(display_font%<>0)
 ENDIF

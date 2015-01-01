@@ -238,7 +238,7 @@ $FNicon_indirection(ChoicesPane%(0), 7) = LEFT$(STR$(bubble_delay% / &64), 3)
 $FNicon_indirection(ChoicesPane%(0), 10) = LEFT$(STR$((kill_delay% - bubble_delay%) / &64), 3)
 
 PROCicon_set_state(ChoicesPane%(1), 0, draw_shadow%, 0, 0)
-PROCicon_set_state(ChoicesPane%(1), 17, font_desktop% AND desktop_font_available%, NOT desktop_font_available%, 0)
+PROCicon_set_state(ChoicesPane%(1), 17, font_desktop% AND DesktopFontAvailable%, NOT DesktopFontAvailable%, 0)
 $FNicon_indirection(ChoicesPane%(1), 15) = font_name$
 size$ = STR$(font_size% / 16)
 IF INSTR(size$, ".") > 0 THEN size$ = LEFT$(size$, INSTR(size$, ".") + 1)
@@ -318,7 +318,7 @@ PROCconfig_set_boolean("Draw shadows", FNicon_selected(ChoicesPane%(1), 0))
 PROCconfig_set_string("Font name", FNstring_read(FNicon_indirection(ChoicesPane%(1), 15)))
 PROCconfig_set_real("Font size", VAL($FNicon_indirection(ChoicesPane%(1), 19)))
 PROCconfig_set_real("Font aspect", VAL($FNicon_indirection(ChoicesPane%(1), 21)))
-IF desktop_font_available% THEN PROCconfig_set_boolean("Font use desktop", FNicon_selected(ChoicesPane%(1), 17))
+IF DesktopFontAvailable% THEN PROCconfig_set_boolean("Font use desktop", FNicon_selected(ChoicesPane%(1), 17))
 :
 PROCconfig_set_real("Foreground colour", FNicon_background_colour(ChoicesPane%(1), 4))
 PROCconfig_set_real("Background colour", FNicon_background_colour(ChoicesPane%(1), 7))
@@ -359,7 +359,7 @@ REM config library routines.
 font_size% = FNconfig_read_real("Font size") * 16
 font_aspect% = FNconfig_read_real("Font aspect")
 font_name$ = FNconfig_read_string("Font name")
-font_desktop% = FNconfig_read_boolean("Font use desktop") AND desktop_font_available%
+font_desktop% = FNconfig_read_boolean("Font use desktop") AND DesktopFontAvailable%
 bubble_delay% = FNconfig_read_real("Open delay") * 100
 kill_delay% = FNconfig_read_real("Close delay") * 100 + bubble_delay%
 kill_bubbles% = FNconfig_read_boolean("Close bubbles")
