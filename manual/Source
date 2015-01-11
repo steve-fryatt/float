@@ -1,6 +1,7 @@
 <document title="Float">
 <define name="version" value="0.40">
 <define name="date" value="8 July 2003" length=30 align="right">
+<define name="sprites" value="Sprites">
 
 
 
@@ -123,6 +124,10 @@ Some of the &ldquo;nice&rdquo; features of <cite>Float</cite> are:
 <cite>Float</cite> requires RISC&nbsp;OS&nbsp;3.8 or later; it may work on earlier versions, but requies the Nested Wimp and is not supported. The code should be 26/32-bit neutral and ARMv7 aware, and should therefore run on all hardware systems. <cite>Float</cite> can be run off a hard disc or floppy disc.
 
 To install Float, copy the <file>!Float</file> application to a suitable place on your disc. If you want it to run on startup, <cite>Float</cite> should be placed in your boot sequence. On a machine with the new boot structure installed, this can be done by adding it to the list of tasks to be run on startup via Configure. On older machines, you will have to make your own arrangements (but you will probably have made your own boot system anyway).
+
+<box type="warning">
+If you are updating to Float&nbsp;0.40 or later from version 0.36 or earlier, the contents of the application directory have changed. As such, you are advised to delete (or move out of the way) your existing !Float application and replace it with the new one, instead of simply copying the new one on top of the old.
+</box>
 
 By default, <cite>Float</cite> will set the system variable &lt;Help$Start&gt; when it is seen or run by the Filer. This makes it the default interactive help client to be loaded if one is required.
 
@@ -483,12 +488,15 @@ The following is a list of ideas that will hopefully be added to future versions
 Development release for testing and feedback.
 
 <list>
+<li>Build system revised and licence updated to EUPL.
+<li>ARMv7 safe and compatible with modern versions of RISC&nbsp;OS&nbsp;5.
 <li>Added <icon>Website</icon> button to <window>Program Info</window> window.
 <li>Changed error system to use Locate 1&rsquo;s WimpError library.
 <li>Added <menu>Help</menu> entry to iconbar menu (Ticket #480).
 <li>Interactive help code is more tolerant of unexpected input (Ticket #244).
 <li>New Choices interface implemented, with facility to set applications to be ignored.
 <li>Removed RMA memory leak from OS help token handling code (Ticket #543).
+<li>Application sprites updated.
 <li>
 </list>
 
