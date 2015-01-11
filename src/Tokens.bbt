@@ -1,0 +1,104 @@
+REM >!Float-Tokens
+REM
+REM Copyright 1999-2015, Stephen Fryatt (info@stevefryatt.org.uk)
+REM
+REM This file is part of Float:
+REM
+REM   http://www.stevefryatt.org.uk/software/
+REM
+REM Licensed under the EUPL, Version 1.1 only (the "Licence");
+REM You may not use this work except in compliance with the
+REM Licence.
+REM
+REM You may obtain a copy of the Licence at:
+REM
+REM   http://joinup.ec.europa.eu/software/page/eupl
+REM
+REM Unless required by applicable law or agreed to in
+REM writing, software distributed under the Licence is
+REM distributed on an "AS IS" basis, WITHOUT WARRANTIES
+REM OR CONDITIONS OF ANY KIND, either express or implied.
+REM
+REM See the Licence for the specific language governing
+REM permissions and limitations under the Licence.
+:
+REM Manage the lookup of OS help message tokens.
+
+
+REM Locate and open the correct set of message tokens for the version of
+REM RISC OS we are running on at the moment.
+REM
+REM \param resources_path$	The path to the application resources.
+:
+DEF PROCtokens_initialise(resources_path$) 
+LOCAL token_file$, file%, var%, os_version%, flags%, size%, token_buffer%
+
+
+REM Start by trying the ResourceFS for any tokens stored in ROM for Help.
+
+token_file$ = "Resources:$.Resources.Help.Messages"
+SYS "OS_File", 17, token_file$ TO file%
+
+REM If that file wasn't found, try searching in !Boot.Resources to see
+REM if there's a file in there.
+
+IF file% = 0 THEN
+	SYS "XOS_ReadVarVal", "BootResources$Path", 0, -1, 0, 0 TO ,,var%
+	IF var% < 0 THEN
+		token_file$ = "BootResources:!Help.Messages"
+		SYS "OS_File", 17, token_file$ TO file%
+	ENDIF
+ENDIF
+
+REM If that file also wasn't found, look up the numeric OS version number
+REM and check out own set of token files to see if there's a suitable one
+REM present.
+
+IF file% = 0 THEN
+	SYS "OS_Byte", 129, 0, &FF TO ,os_version%
+	token_file$ = resources_path$ + "Tokens." + FNresources_find_latest_object(resources_path$ + "Tokens", "", os_version%)
+	SYS "OS_File", 17, token_file$ TO file%
+ENDIF
+
+REM If that also failed, fall back to the old RISC OS 3.1 token data we
+REM have stored locally (Tokens file 164).
+
+IF file% = 0 THEN token_file$ = resources_path$ + "Tokens.164"
+
+REM Open the tokens file previously identified, ready to be used as a
+REM source of Help tokens.
+
+SYS "MessageTrans_FileInfo",,token_file$ TO flags%,, size%
+IF flags% AND 1 THEN token_buffer% = 0 ELSE DIM token_buffer% size%
+SYS "OS_Module", 6,,, 17 + LEN(token_file$) TO ,,Tokens%
+$(Tokens% + 16) = token_file$
+SYS "MessageTrans_OpenFile", Tokens%, Tokens% + 16, token_buffer%
+ENDPROC
+
+
+
+
+REM Close the OS help tokens file and dispose of the resources used.
+:
+DEF PROCtokens_finalise
+SYS "MessageTrans_CloseFile", Tokens%
+SYS "OS_Module", 7,,Tokens%
+ENDPROC
+
+
+
+
+REM Look up an OS help token and return its value.
+REM
+REM \param token%		A byte representing the token to be looked up.
+REM \param buffer%		Pointer to a buffer to take the token's
+REM				text.
+REM \param size%		The number of bytes in the buffer.
+REM \return			The number of bytes written into the buffer.
+:
+DEF FNtokens_lookup(token%, buffer%, size%)
+LOCAL length%
+
+SYS "XMessageTrans_Lookup", Tokens%, "T" + CHR$(token%), buffer%, size% TO ,,,length%
+=length%
+

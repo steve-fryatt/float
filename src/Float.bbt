@@ -1,6 +1,6 @@
 REM >!Float
 REM
-REM Copyright 1999-2014, Stephen Fryatt (info@stevefryatt.org.uk)
+REM Copyright 1999-2015, Stephen Fryatt (info@stevefryatt.org.uk)
 REM
 REM This file is part of Float:
 REM
@@ -39,6 +39,7 @@ LIBRARY "src/Code.bbt"
 LIBRARY "src/Ignore.bbt"
 LIBRARY "src/Mem.bbt"
 LIBRARY "src/TaskMenu.bbt"
+LIBRARY "src/Tokens.bbt"
 
 REM These values get replaced by tokenize.
 
@@ -379,7 +380,7 @@ DEF PROCinitialise
 :
 REM Initialise the program, including the WIMP.
 :
-LOCAL os_version%, token_file$, file%, var%, len%, resources_path$, task_name$, task_sprite$, sprite_area%
+LOCAL len%, resources_path$, task_name$, task_sprite$, sprite_area%
 :
 REM Set up the global data blocks and the parameters needed for WIMP registration.
 :
@@ -425,33 +426,9 @@ REM Initialise the WimpSlot
 
 PROCmem_initialise
 
-REM Load the correct set of message tokens for the version of RISC OS we are running on at the
-REM moment.
+REM Load the help message tokens
 
-REM Load a suitable file of message tokens.  First try in ROM, then in !Boot, then look in our own collection
-REM of versions and finally fall back onto the RISC OS 3.1 data (Tokens.164).
-
-token_file$="Resources:$.Resources.Help.Messages"
-SYS "OS_File",17,token_file$ TO file%
-IF file%=0 THEN
- SYS "XOS_ReadVarVal","BootResources$Path",0,-1,0,0 TO ,,var%
- IF var%<0 THEN
-  token_file$="BootResources:!Help.Messages"
-  SYS "OS_File",17,token_file$ TO file%
- ENDIF
-ENDIF
-IF file%=0 THEN
- SYS "OS_Byte",129,0,&FF TO ,os_version%
- token_file$=resources_path$+"Tokens."+FNresources_find_latest_object(resources_path$+"Tokens","",os_version%)
- SYS "OS_File",17,token_file$ TO file%
-ENDIF
-IF file%=0 THEN token_file$=resources_path$+"Tokens.164"
-:
-SYS "MessageTrans_FileInfo",,token_file$ TO flags%,,size%
-IF flags% AND 1 THEN token_buffer%=0 ELSE DIM token_buffer% size%
-SYS "OS_Module",6,,,17+LEN(token_file$) TO ,,tokens%
-$(tokens%+16)=token_file$
-SYS "MessageTrans_OpenFile",tokens%,tokens%+16,token_buffer%
+PROCtokens_initialise(resources_path$)
 
 REM Allocate space for the indirected icon data and load the templaes file into memory, creating the
 REM windows as we go.
@@ -543,7 +520,7 @@ PROCconfig_init_integer("Poll delay", 5)
 PROCconfig_init_string("Ignore tasks", "")
 
 REM \TODO -- This probably needs to move into the Choices module so that
-REM choices_save$ can be a global variable inside that module.	
+REM choices_save$ can be a global variable inside that module.
 
 choices_load$ = "Choices:Float.Choices"
 SYS "XOS_File",17, choices_load$ TO choices_type% ;flags%
@@ -596,7 +573,7 @@ REM Close the task down, losing the font and closing the messages file first.
 :
 PROCcode_finalise
 PROClose_font
-SYS "MessageTrans_CloseFile", tokens%
+PROCtokens_finalise
 SYS "Wimp_CloseDown", TaskHandle%, &4B534154
 ENDPROC
 :
@@ -772,14 +749,12 @@ REM ----------------------------------------------------------------------------
 :
 :
 :
-DEF PROCexpand_text(original_text%)
-:
+
+
 REM Expand the text and open the bubble on the screen if help text has been received.
 REM
 REM The text must be 'escaped' to remove the \X compressions used by Acorn (including the extras
 REM used in RISC OS 3.5+), GSTrans'd and finally formatted.
-:
-LOCAL o%, h%, c%, len%
 :
 REM Start by 'escaping' the string, by expanding with the dictionary in the Messages file.
 REM
@@ -792,52 +767,60 @@ REM If the second character was NOT a '\', append it to a 'T' and look up the re
 REM the Messages file dictionary.  The call is asked to put the result straight into the
 REM HelpTextBuffer% buffer in the correct place, before the buffer pointer is moved on by the length
 REM of the result.
-:
-o%=0
-h%=0
-:
+
+
+DEF PROCexpand_text(original_text%)
+LOCAL o%, h%, c%, len%, symbols$
+
+
+symbols$ = CHR$(&80) + CHR$(&84) + CHR$(&88) + CHR$(&89) + CHR$(&8A) + CHR$(&8B)
+
+
+o% = 0
+h% = 0
+
 REPEAT
- c%=original_text%?o%
- o%+=1
- :
- IF CHR$(c%)<>"\" THEN
-  IF (INSTR("€„ˆ‰Š‹",CHR$(c%))>0) AND (symbol_font%>0) THEN
-   HelpTextBuffer%?h%=26
-   HelpTextBuffer%?(h%+1)=symbol_font%
-   HelpTextBuffer%?(h%+2)=c%
-   HelpTextBuffer%?(h%+3)=26
-   HelpTextBuffer%?(h%+4)=display_font%
-   h%+=5
-  ELSE
-   HelpTextBuffer%?h%=c%
-   h%+=1
-  ENDIF
- ELSE
-  c%=original_text%?o%
-  o%+=1
-  :
-  IF CHR$(c%)="\" THEN
-   HelpTextBuffer%?h%=ASC("\")
-   h%+=1
-  ELSE
-   SYS "XMessageTrans_Lookup",tokens%,"T"+CHR$(c%),HelpTextBuffer%+h%,HelpTextBufferSize%-h% TO ,,,len%
-   h%+=len%
-  ENDIF
- ENDIF
-UNTIL c%<32 OR h%>=HelpTextBufferSize%
-:
-REM If the expansion ended bacause the buffer was full, terminate with a message that makes this
-REM clear.
-:
-IF h%>=HelpTextBufferSize% THEN
- $(HelpTextBuffer%+HelpTextBufferSize%-27)="...|M[help text truncated]" : HelpTextBuffer%?(HelpTextBufferSize%-1)=0
+	c% = original_text%?o%
+	o% += 1
+
+	IF CHR$(c%) <> "\" THEN
+		IF (INSTR(symbols$, CHR$(c%)) > 0) AND (symbol_font% > 0) THEN
+			HelpTextBuffer%?h% = 26
+			HelpTextBuffer%?(h% + 1) = symbol_font%
+			HelpTextBuffer%?(h% + 2) = c%
+			HelpTextBuffer%?(h% + 3) = 26
+			HelpTextBuffer%?(h% + 4) = display_font%
+			h% += 5
+		ELSE
+			HelpTextBuffer%?h% = c%
+			h% += 1
+		ENDIF
+	ELSE
+		c% = original_text%?o%
+		o% += 1
+
+		IF CHR$(c%) = "\" THEN
+			HelpTextBuffer%?h% = ASC("\")
+			h% += 1
+		ELSE
+			h% += FNtokens_lookup(c%, HelpTextBuffer% + h%, HelpTextBufferSize% - h%)
+		ENDIF
+	ENDIF
+UNTIL c% < 32 OR h% >= HelpTextBufferSize%
+
+REM If the expansion ended bacause the buffer was full, terminate with a
+REM message that makes this clear.
+
+IF h% >= HelpTextBufferSize% THEN
+	$(HelpTextBuffer% + HelpTextBufferSize% - 27) = "...|M[help text truncated]"
+	HelpTextBuffer%?(HelpTextBufferSize% - 1) = 0
 ELSE
- HelpTextBuffer%?(h%-1)=0
+	HelpTextBuffer%?(h% - 1) = 0
 ENDIF
-:
-REM Open the bubble on the screen with the string in the HelpTextBuffer% buffer.  This will need to be
-REM GSTrans'd and formatted first.
-:
+
+REM Open the bubble on the screen with the string in the HelpTextBuffer%
+REM buffer. This will need to be GSTrans'd and formatted first.
+
 PROCopen_bubble(HelpTextBuffer%)
 ENDPROC
 :

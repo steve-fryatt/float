@@ -36,7 +36,7 @@ If you have any comments about {f/:Float}, or would like to report any bugs that
 Updates to {f/:Float} and more programs for RISC OS computers can be found on my website at <http://www.stevefryatt.org.uk/software/=>#url>.
 
 #Align Centre
-© Stephen Fryatt, 1999-2014 (<steve@stevefryatt.org.uk=>#url mailto:steve@stevefryatt.org.uk>)
+© Stephen Fryatt, 1999-2015 (<steve@stevefryatt.org.uk=>#url mailto:steve@stevefryatt.org.uk>)
 
 A plain text version of this manual is available <here=>*Filer_Run <Float$HelpText\>>.
 #Align Left
@@ -51,7 +51,7 @@ A plain text version of this manual is available <here=>*Filer_Run <Float$HelpTe
 =============================================================================
 Float - Floating Interactive Help                                Version $$version$$
 
-(C) Stephen Fryatt, 1999-2014                  $$date$$
+(C) Stephen Fryatt, 1999-2015                  $$date$$
 =============================================================================
 </literal>
 
@@ -120,7 +120,7 @@ Some of the &ldquo;nice&rdquo; features of <cite>Float</cite> are:
 
 <chapter title="Installing Float" file="Installation">
 
-<cite>Float</cite> requires RISC&nbsp;OS&nbsp;3.8 or later; it may work on earlier versions, but requies the Nested Wimp and is not supported. The code should be 26/32-bit neutral and ARMv7 aware, and ought to work on RISC&nbsp;OS&nbsp;5. <cite>Float</cite> can be run off a hard disc or floppy disc.
+<cite>Float</cite> requires RISC&nbsp;OS&nbsp;3.8 or later; it may work on earlier versions, but requies the Nested Wimp and is not supported. The code should be 26/32-bit neutral and ARMv7 aware, and should therefore run on all hardware systems. <cite>Float</cite> can be run off a hard disc or floppy disc.
 
 To install Float, copy the <file>!Float</file> application to a suitable place on your disc. If you want it to run on startup, <cite>Float</cite> should be placed in your boot sequence. On a machine with the new boot structure installed, this can be done by adding it to the list of tasks to be run on startup via Configure. On older machines, you will have to make your own arrangements (but you will probably have made your own boot system anyway).
 
@@ -488,6 +488,7 @@ Development release for testing and feedback.
 <li>Added <menu>Help</menu> entry to iconbar menu (Ticket #480).
 <li>Interactive help code is more tolerant of unexpected input (Ticket #244).
 <li>New Choices interface implemented, with facility to set applications to be ignored.
+<li>Removed RMA memory leak from OS help token handling code (Ticket #543).
 <li>
 </list>
 
