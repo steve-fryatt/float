@@ -29,6 +29,8 @@ SupportURL:http://www.stevefryatt.org.uk/software/float/
 
 URLFailed:Could not find an application to launch the given URL.
 
+Truncated:...|M[help text truncated]
+
 # Float Interactive Help Messages
 #
 # Messages used by Float when generating help texts for its own windows.

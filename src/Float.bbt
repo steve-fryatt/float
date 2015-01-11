@@ -740,41 +740,38 @@ IF (flags% AND 1) = 0 THEN
 	PROCexpand_text(b%)
 ENDIF
 ENDPROC
-:
-:
-:
-:
-REM --------------------------------------------------------------------------------------------------------------------
-:
-:
-:
-:
 
 
-REM Expand the text and open the bubble on the screen if help text has been received.
+
+
+REM Expand the help text supplied by the client, looking up the \X tokens
+REM used by RISC OS and inserting font-change sequences to handle the
+REM characters that require the Symbol font for display.
 REM
-REM The text must be 'escaped' to remove the \X compressions used by Acorn (including the extras
-REM used in RISC OS 3.5+), GSTrans'd and finally formatted.
+REM Once expanded, pass the resulting text on to the bubble formatting code.
+REM
+REM \param original_text%	Pointer to the help text for expansion.
 :
-REM Start by 'escaping' the string, by expanding with the dictionary in the Messages file.
-REM
-REM For each craracter in the (control terminated) string, if it is NOT a '\' copy it straight
-REM in to the HelpTextBuffer% buffer and step on one.  If it is a '\', get the next charater and
-REM step on one more.  If the next character is a '\' as well, copy one '\' into the HelpTextBuffer%
-REM buffer and move on one character.
-REM
-REM If the second character was NOT a '\', append it to a 'T' and look up the resulting token in
-REM the Messages file dictionary.  The call is asked to put the result straight into the
-REM HelpTextBuffer% buffer in the correct place, before the buffer pointer is moved on by the length
-REM of the result.
-
-
 DEF PROCexpand_text(original_text%)
-LOCAL o%, h%, c%, len%, symbols$
+LOCAL o%, h%, c%, len%, symbols$, truncated$
 
+REM The set of characters which need to be displayed in the Symbol font.
 
 symbols$ = CHR$(&80) + CHR$(&84) + CHR$(&88) + CHR$(&89) + CHR$(&8A) + CHR$(&8B)
 
+REM Start by 'escaping' the string, by expanding with the appropriate tokens
+REM dictionary for the current OS.
+REM
+REM For each craracter in the string, if it is NOT a '\' copy it straight
+REM in to the HelpTextBuffer% buffer and step on one place. If it is a '\',
+REM get the next charater and step on one more. If the next character is a
+REM '\' as well, copy one '\' into the HelpTextBuffer% buffer and move on
+REM one character so that "\\" translates to "\".
+REM
+REM If the second character was NOT a '\', pass it to the token lookup
+REM routine, to find an appropriate expansion and write it directly in to the
+REM HelpTextBuffer% buffer in the correct place before the buffer pointer is
+REM moved on by the length of the result.
 
 o% = 0
 h% = 0
@@ -812,7 +809,8 @@ REM If the expansion ended bacause the buffer was full, terminate with a
 REM message that makes this clear.
 
 IF h% >= HelpTextBufferSize% THEN
-	$(HelpTextBuffer% + HelpTextBufferSize% - 27) = "...|M[help text truncated]"
+	truncated$ = FNmessage_lookup("Truncated")
+	$(HelpTextBuffer% + HelpTextBufferSize% - (LEN(truncated$) + 1)) = truncated$
 	HelpTextBuffer%?(HelpTextBufferSize% - 1) = 0
 ELSE
 	HelpTextBuffer%?(h% - 1) = 0
