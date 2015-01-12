@@ -405,7 +405,7 @@ IgnoreTaskHandles%() = 0
 IgnoreHandleLinks%() = -1
 IgnoreHandles% = 0
 
-REM Oepn the file and take it one line at a time.
+REM Open the file and take it one line at a time.
 
 list$ = FNconfig_read_string("Ignore tasks") + ","
 
