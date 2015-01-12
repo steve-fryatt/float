@@ -1283,26 +1283,4 @@ DEF PROClose_font
 :
 IF NOT UsingDesktopFont% THEN SYS "Font_LoseFont",display_font% : SYS "Font_LoseFont",symbol_font%
 ENDPROC
-:
-:
-:
-:
-REM ====================================================================================================================
-REM Misc routines
-REM ====================================================================================================================
-:
-:
-:
-:
-DEF PROCset_colour_icon(w%,i%,c%)
-:
-REM Set the given icon's bacground to the correct colour and change the text to show the colour
-REM number.
-:
-LOCAL f%
-:
-IF c%>=4 AND c%<=8 THEN f%=0 ELSE f%=7
-PROCicon_set_colours(w%,i%,f%,c%)
-$FNicon_indirection(w%,i%)=STR$(c%)
-ENDPROC
 

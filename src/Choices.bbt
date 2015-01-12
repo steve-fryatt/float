@@ -215,19 +215,15 @@ ENDCASE
 
 
 
-REM Open the Choices dialogue on screen.
+REM Copy the information from the configuration settings into the icons in
+REM the Choices dialogue, before optionally opening it on the screen if
+REM both x% and y% are >= 0.
 REM
 REM \param x%			The X coordinate to open the dialogue at.
 REM \param y%			The Y coordinate to open the dialogue at.
 :
 DEF PROCchoices_open_window(x%, y%)
-:
-REM Copy the information from the configuration settings into the icons in the options window,
-REM before opening the window.
-:
-LOCAL size$, loop%
-:
-*Report ChoicesFontName$
+LOCAL loop%
 
 PROCicon_set_state(ChoicesPane%(0), 2, FNconfig_read_boolean("Open bubbles"), 0, 0)
 PROCicon_set_state(ChoicesPane%(0), 3, ChoicesKillBubbles%, 0, 0)
@@ -236,22 +232,19 @@ PROCicon_set_state(ChoicesPane%(0), 5, ChoicesHideAcrossDrags%, NOT ChoicesHideO
 PROCicon_set_state(ChoicesPane%(0), 14, ChoicesShowToolHelp%, 0, 0)
 PROCicon_set_state(ChoicesPane%(0), 15, ChoicesShowIconbarHelp%, 0, 0)
 PROCicon_set_state(ChoicesPane%(0), 16, ChoicesShowDefaultHelp%, 0, 0)
-$FNicon_indirection(ChoicesPane%(0), 7) = LEFT$(STR$(ChoicesBubbleDelay% / 100), 3)
-$FNicon_indirection(ChoicesPane%(0), 10) = LEFT$(STR$((ChoicesKillDelay% - ChoicesBubbleDelay%) / 100), 3)
+PROCicon_set_indirected_text(ChoicesPane%(0), 7, FNchoices_format_number(ChoicesBubbleDelay% / 100, 1))
+PROCicon_set_indirected_text(ChoicesPane%(0), 10, FNchoices_format_number((ChoicesKillDelay% - ChoicesBubbleDelay%) / 100, 1))
 
 PROCicon_set_state(ChoicesPane%(1), 0, ChoicesDrawShadow%, 0, 0)
 PROCicon_set_state(ChoicesPane%(1), 17, ChoicesFontUseDesktop% AND DesktopFontAvailable%, NOT DesktopFontAvailable%, 0)
-$FNicon_indirection(ChoicesPane%(1), 15) = ChoicesFontName$
-size$ = STR$(ChoicesFontSize% / 16)
-IF INSTR(size$, ".") > 0 THEN size$ = LEFT$(size$, INSTR(size$, ".") + 1)
-$FNicon_indirection(ChoicesPane%(1), 19) = size$
-$FNicon_indirection(ChoicesPane%(1), 21) = STR$(ChoicesFontAspect%)
+PROCicon_set_indirected_text(ChoicesPane%(1), 15, ChoicesFontName$)
+PROCicon_set_indirected_text(ChoicesPane%(1), 19, FNchoices_format_number(ChoicesFontSize% / 16, 1))
+PROCicon_set_indirected_text(ChoicesPane%(1), 21, STR$(ChoicesFontAspect%))
+PROCchoices_set_colour_icon(ChoicesPane%(1), 4, ChoicesTextColour%)
+PROCchoices_set_colour_icon(ChoicesPane%(1), 7, ChoicesBackgroundColour%)
+PROCchoices_set_colour_icon(ChoicesPane%(1), 10, ChoicesShadowColour%)
 
-PROCset_colour_icon(ChoicesPane%(1), 4, ChoicesTextColour%)
-PROCset_colour_icon(ChoicesPane%(1), 7, ChoicesBackgroundColour%)
-PROCset_colour_icon(ChoicesPane%(1), 10, ChoicesShadowColour%)
-
-$FNicon_indirection(ChoicesPane%(2), 3) = ""
+PROCicon_set_indirected_text(ChoicesPane%(2), 3, "")
 PROCignore_fill_choices_window
 
 IF x% >= 0 AND y% >= 0 THEN
@@ -397,7 +390,7 @@ font$ = MID$(font$, index% + 2)
 index% = INSTR(font$, "\")
 IF index% <> 0 THEN font$ = LEFT$(font$, index% - 1)
 
-$FNicon_indirection(ChoicesPane%(1), 15) = font$
+PROCicon_set_indirected_text(ChoicesPane%(1), 15, font$)
 PROCicon_redraw(ChoicesPane%(1), 15)
 ENDPROC
 
@@ -410,7 +403,7 @@ REM \param task$		The new task name, as supplied by the task
 REM				name menu.
 :
 DEF PROCchoices_task_menu_selection(task$)
-$FNicon_indirection(ChoicesPane%(2), 3) = task$
+PROCicon_set_indirected_text(ChoicesPane%(2), 3, task$)
 PROCicon_redraw(ChoicesPane%(2), 3)
 IF FNicon_test_for_caret(ChoicesPane%(2), 3) THEN PROCicon_put_caret_at_end(ChoicesPane%(2), 3)
 ENDPROC
@@ -434,7 +427,38 @@ REM
 REM \param colour%		The new colour selcted from the window.
 :
 DEF PROCchoices_colour_selection(colour%)
-PROCset_colour_icon(ChoicesPane%(1), ChoicesColourIcon%, colour%)
+PROCchoices_set_colour_icon(ChoicesPane%(1), ChoicesColourIcon%, colour%)
 PROCicon_redraw(ChoicesPane%(1), ChoicesColourIcon%)
+ENDPROC
+
+
+
+REM Convert a number into a string, to a fixed number of decimal places.
+REM
+REM \param number		The number to be formatted.
+REM \param places%		The number of decmal places to be used.
+REM \return			The number formatted as a string.
+:
+DEF FNchoices_format_number(number, places%)
+LOCAL @%
+@% = &01020010 + (places% << 8)
+=STR$(number)
+
+
+
+
+REM Set a colour icon to a new value: set the background to the correct
+REM colour and change the foreground text colour to a suitable contrast.
+REM
+REM \param window%		The window containing the icon.
+REM \param icon%		The icon to be set.
+REM \param colour%		The colour to set the icon to.
+:
+DEF PROCchoices_set_colour_icon(window%, icon%, colour%)
+LOCAL foreground%
+
+IF colour% >= 4 AND colour% <= 8 THEN foreground% = 0 ELSE foreground% = 7
+PROCicon_set_colours(window%, icon%, foreground%, colour%)
+PROCicon_set_indirected_text(window%, icon%, STR$(colour%))
 ENDPROC
 
