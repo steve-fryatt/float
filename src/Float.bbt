@@ -545,7 +545,7 @@ REM Put an icon on the icon bar.
 DIM bar_sprite% 10
 IF ChoicesDisplayBubbles% THEN $bar_sprite% = "on" ELSE $bar_sprite% = "off"
 
-!q% = -1
+!q% = -8
 q%!4 = 0
 q%!8 = 0
 q%!12 = 68
@@ -554,7 +554,7 @@ q%!20 = &311A
 q%!24 = bar_sprite%
 q%!28 = sprite_area%
 q%!32 = 10
-SYS "Wimp_CreateIcon",,q% TO IconbarIconHandle%
+SYS "Wimp_CreateIcon", &40000000, q% TO IconbarIconHandle%
 :
 PROCcode_initialise
 ENDPROC

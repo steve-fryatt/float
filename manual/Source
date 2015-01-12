@@ -497,6 +497,8 @@ Development release for testing and feedback.
 <li>New Choices interface implemented, with facility to set applications to be ignored.
 <li>Removed RMA memory leak from OS help token handling code (Ticket #543).
 <li>Application sprites updated.
+<li>Choices dialogue now filled correctly, with field length bounds-checking and configured font name intact (Ticket #541).
+<li>Position application to right-hand end of iconbar, alongside RISC&nbsp;OS&rsquo;s own Help (Ticket #544).
 <li>
 </list>
 
