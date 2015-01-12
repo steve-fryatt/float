@@ -1157,19 +1157,12 @@ REM ----------------------------------------------------------------------------
 :
 :
 :
+REM In the event of a mode change, re-bind the font handle and get the new
+REM mode size.
 :
 DEF PROCnew_mode
-:
-REM In the event of a mode change, re-bind the font handle and get the new mode size.
-:
-LOCAL font_width%
-:
-font_width%=FNconfig_read_real("Font aspect")*ChoicesFontSize%/100
 PROClose_font
 PROCfind_font
-REMSYS "Font_LoseFont",display_font%
-REMSYS "XFont_FindFont",,FNconfig_read_string("Font name"),font_width%,ChoicesFontSize%,0,0 TO display_font% ;flags%
-REMIF (flags% AND 1) THEN SYS "Font_FindFont",,"Trinity.Medium",ChoicesFontAspect%*ChoicesFontSize%/100,ChoicesFontSize%,0,0 TO display_font%
 PROCget_mode_size
 ENDPROC
 :
