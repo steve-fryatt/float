@@ -1,6 +1,6 @@
 REM >!Float-Choices
 REM
-REM Copyright 1999-2014, Stephen Fryatt (info@stevefryatt.org.uk)
+REM Copyright 1999-2015, Stephen Fryatt (info@stevefryatt.org.uk)
 REM
 REM This file is part of Float:
 REM
@@ -227,27 +227,29 @@ REM before opening the window.
 :
 LOCAL size$, loop%
 :
-PROCicon_set_state(ChoicesPane%(0), 2, FNconfig_read_boolean("Open bubbles"), 0, 0)
-PROCicon_set_state(ChoicesPane%(0), 3, kill_bubbles%, 0, 0)
-PROCicon_set_state(ChoicesPane%(0), 4, hide_on_click%, 0, 0)
-PROCicon_set_state(ChoicesPane%(0), 5, hide_across_drags%, NOT hide_on_click%, 0)
-PROCicon_set_state(ChoicesPane%(0), 14, show_tool_help%, 0, 0)
-PROCicon_set_state(ChoicesPane%(0), 15, show_ibar_help%, 0, 0)
-PROCicon_set_state(ChoicesPane%(0), 16, show_default_help%, 0, 0)
-$FNicon_indirection(ChoicesPane%(0), 7) = LEFT$(STR$(bubble_delay% / &64), 3)
-$FNicon_indirection(ChoicesPane%(0), 10) = LEFT$(STR$((kill_delay% - bubble_delay%) / &64), 3)
+*Report ChoicesFontName$
 
-PROCicon_set_state(ChoicesPane%(1), 0, draw_shadow%, 0, 0)
-PROCicon_set_state(ChoicesPane%(1), 17, font_desktop% AND DesktopFontAvailable%, NOT DesktopFontAvailable%, 0)
-$FNicon_indirection(ChoicesPane%(1), 15) = font_name$
-size$ = STR$(font_size% / 16)
+PROCicon_set_state(ChoicesPane%(0), 2, FNconfig_read_boolean("Open bubbles"), 0, 0)
+PROCicon_set_state(ChoicesPane%(0), 3, ChoicesKillBubbles%, 0, 0)
+PROCicon_set_state(ChoicesPane%(0), 4, ChoicesHideOnClick%, 0, 0)
+PROCicon_set_state(ChoicesPane%(0), 5, ChoicesHideAcrossDrags%, NOT ChoicesHideOnClick%, 0)
+PROCicon_set_state(ChoicesPane%(0), 14, ChoicesShowToolHelp%, 0, 0)
+PROCicon_set_state(ChoicesPane%(0), 15, ChoicesShowIconbarHelp%, 0, 0)
+PROCicon_set_state(ChoicesPane%(0), 16, ChoicesShowDefaultHelp%, 0, 0)
+$FNicon_indirection(ChoicesPane%(0), 7) = LEFT$(STR$(ChoicesBubbleDelay% / 100), 3)
+$FNicon_indirection(ChoicesPane%(0), 10) = LEFT$(STR$((ChoicesKillDelay% - ChoicesBubbleDelay%) / 100), 3)
+
+PROCicon_set_state(ChoicesPane%(1), 0, ChoicesDrawShadow%, 0, 0)
+PROCicon_set_state(ChoicesPane%(1), 17, ChoicesFontUseDesktop% AND DesktopFontAvailable%, NOT DesktopFontAvailable%, 0)
+$FNicon_indirection(ChoicesPane%(1), 15) = ChoicesFontName$
+size$ = STR$(ChoicesFontSize% / 16)
 IF INSTR(size$, ".") > 0 THEN size$ = LEFT$(size$, INSTR(size$, ".") + 1)
 $FNicon_indirection(ChoicesPane%(1), 19) = size$
-$FNicon_indirection(ChoicesPane%(1), 21) = STR$(font_aspect%)
+$FNicon_indirection(ChoicesPane%(1), 21) = STR$(ChoicesFontAspect%)
 
-PROCset_colour_icon(ChoicesPane%(1), 4, text_colour%)
-PROCset_colour_icon(ChoicesPane%(1), 7, background_colour%)
-PROCset_colour_icon(ChoicesPane%(1), 10, shadow_colour%)
+PROCset_colour_icon(ChoicesPane%(1), 4, ChoicesTextColour%)
+PROCset_colour_icon(ChoicesPane%(1), 7, ChoicesBackgroundColour%)
+PROCset_colour_icon(ChoicesPane%(1), 10, ChoicesShadowColour%)
 
 $FNicon_indirection(ChoicesPane%(2), 3) = ""
 PROCignore_fill_choices_window
@@ -302,7 +304,7 @@ REM variables used by the program. Close the window and/or save the new options.
 :
 LOCAL old_open_state%, change_open_state%
 :
-old_open_state% = display_bubbles%
+old_open_state% = ChoicesDisplayBubbles%
 change_open_state% = (FNconfig_read_boolean("Open bubbles") <> FNicon_selected(ChoicesWindow%, 0))
 :
 PROCconfig_set_boolean("Open bubbles", FNicon_selected(ChoicesPane%(0), 2))
@@ -329,7 +331,7 @@ PROCignore_save_choices_window
 PROCchoices_sync
 PROClose_font
 PROCfind_font
-IF change_open_state% THEN PROCset_help_state(display_bubbles%) ELSE PROCset_help_state(old_open_state%)
+IF change_open_state% THEN PROCset_help_state(ChoicesDisplayBubbles%) ELSE PROCset_help_state(old_open_state%)
 IF close% THEN PROCwindow_close(ChoicesWindow%)
 :
 IF save% THEN
@@ -356,27 +358,27 @@ DEF PROCchoices_sync
 REM Derive the actual veriables used by the program from the configuration information stored in the
 REM config library routines.
 :
-font_size% = FNconfig_read_real("Font size") * 16
-font_aspect% = FNconfig_read_real("Font aspect")
-font_name$ = FNconfig_read_string("Font name")
-font_desktop% = FNconfig_read_boolean("Font use desktop") AND DesktopFontAvailable%
-bubble_delay% = FNconfig_read_real("Open delay") * 100
-kill_delay% = FNconfig_read_real("Close delay") * 100 + bubble_delay%
-kill_bubbles% = FNconfig_read_boolean("Close bubbles")
-draw_shadow% = FNconfig_read_boolean("Draw shadows")
-display_bubbles% = FNconfig_read_boolean("Open bubbles")
-hide_across_drags% = FNconfig_read_boolean("Hide over drags")
-hide_on_click% = FNconfig_read_boolean("Hide on clicks")
-show_tool_help% = FNconfig_read_boolean("Show tool help")
-show_ibar_help% = FNconfig_read_boolean("Show bar help")
-show_default_help% = FNconfig_read_boolean("Identify silent apps")
+ChoicesFontSize% = FNconfig_read_real("Font size") * 16
+ChoicesFontAspect% = FNconfig_read_real("Font aspect")
+ChoicesFontName$ = FNconfig_read_string("Font name")
+ChoicesFontUseDesktop% = FNconfig_read_boolean("Font use desktop") AND DesktopFontAvailable%
+ChoicesBubbleDelay% = FNconfig_read_real("Open delay") * 100
+ChoicesKillDelay% = FNconfig_read_real("Close delay") * 100 + ChoicesBubbleDelay%
+ChoicesKillBubbles% = FNconfig_read_boolean("Close bubbles")
+ChoicesDrawShadow% = FNconfig_read_boolean("Draw shadows")
+ChoicesDisplayBubbles% = FNconfig_read_boolean("Open bubbles")
+ChoicesHideAcrossDrags% = FNconfig_read_boolean("Hide over drags")
+ChoicesHideOnClick% = FNconfig_read_boolean("Hide on clicks")
+ChoicesShowToolHelp% = FNconfig_read_boolean("Show tool help")
+ChoicesShowIconbarHelp% = FNconfig_read_boolean("Show bar help")
+ChoicesShowDefaultHelp% = FNconfig_read_boolean("Identify silent apps")
 :
-mouse_jitter% = FNconfig_read_integer("Mouse jitter")
-poll_delay% = FNconfig_read_integer("Poll delay")
+ChoicesMouseJitter% = FNconfig_read_integer("Mouse jitter")
+ChoicesPollDelay% = FNconfig_read_integer("Poll delay")
 :
-text_colour% = FNconfig_read_integer("Foreground colour")
-background_colour% = FNconfig_read_integer("Background colour")
-shadow_colour% = FNconfig_read_integer("Shadow colour")
+ChoicesTextColour% = FNconfig_read_integer("Foreground colour")
+ChoicesBackgroundColour% = FNconfig_read_integer("Background colour")
+ChoicesShadowColour% = FNconfig_read_integer("Shadow colour")
 ENDPROC
 
 

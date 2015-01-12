@@ -69,10 +69,10 @@ REM Poll the Wimp using Wimp_PollIdle and process the returned reason code.
 DEF PROCpoll
 LOCAL reason%
 
-SYS "Wimp_PollIdle", &3830 + ((NOT display_bubbles%) AND 1), b%, NextPoll% TO reason%
+SYS "Wimp_PollIdle", &3830 + ((NOT ChoicesDisplayBubbles%) AND 1), b%, NextPoll% TO reason%
 
 SYS "OS_ReadMonotonicTime" TO NextPoll%
-NextPoll% += poll_delay%
+NextPoll% += ChoicesPollDelay%
 
 CASE reason% OF
 	WHEN 0		: PROCidle_event
@@ -107,7 +107,7 @@ IF pointer% = 0 THEN ENDPROC
 
 SYS "Wimp_GetPointerInfo",,pointer%
 
-significant_movement% = (ABS(pointer%!0 - LastMouseX%) > mouse_jitter% OR ABS(pointer%!4 - LastMouseY%) > mouse_jitter%)
+significant_movement% = (ABS(pointer%!0 - LastMouseX%) > ChoicesMouseJitter% OR ABS(pointer%!4 - LastMouseY%) > ChoicesMouseJitter%)
 window_change% = (LastMouseWindow% <> pointer%!12)
 icon_change% = (LastMouseIcon% <> pointer%!16)
 key_pressed% = FNcode_key_pressed
@@ -131,9 +131,9 @@ IF BubbleOpen% THEN
 		LastMouseY% = pointer%!4
 	WHEN window_change% OR icon_change%
 		PROCclose_bubble
-	WHEN (key_pressed% AND hide_on_click%)
+	WHEN (key_pressed% AND ChoicesHideOnClick%)
 		PROCclose_bubble
-	WHEN (still_time% > kill_delay% AND kill_bubbles%)
+	WHEN (still_time% > ChoicesKillDelay% AND ChoicesKillBubbles%)
 		PROCclose_bubble
 	ENDCASE
 ENDIF
@@ -147,7 +147,7 @@ IF window_change% OR icon_change% OR significant_movement% THEN
 	LastMouseX% = pointer%!0
 	LastMouseY% = pointer%!4
 	SYS "OS_ReadMonotonicTime" TO LastMouseStillTime%
-	IF NOT (hide_across_drags% AND MouseDragging%) THEN WaitingToOpen% = display_bubbles%
+	IF NOT (ChoicesHideAcrossDrags% AND MouseDragging%) THEN WaitingToOpen% = ChoicesDisplayBubbles%
 ENDIF
 
 REM Detect the end of a mouse drag, after using the drag status.
@@ -159,7 +159,7 @@ REM the details and thereby kick off a new bubble creation process.
 
 IF WaitingToOpen% THEN
 	IF key_pressed% THEN WaitingToOpen% = FALSE
-	IF still_time% > bubble_delay% THEN
+	IF still_time% > ChoicesBubbleDelay% THEN
 		WaitingToOpen% = FALSE
 		PROCget_help_text(pointer%)
 	ENDIF
@@ -188,7 +188,7 @@ CASE block%!12 OF
 WHEN -2
 	CASE block%!8 OF
 	WHEN 4
-		PROCset_help_state(NOT display_bubbles%)
+		PROCset_help_state(NOT ChoicesDisplayBubbles%)
 	WHEN 2
 		PROCmenu_set_state(IconbarMenu%, 3, ShowAllHelp%, FALSE)
 		PROCmenu_create_iconbar(IconbarMenu%, !block%)
@@ -361,7 +361,7 @@ REM \param message%		Pointer to the message block.
 DEF PROCbounced_message(message%)
 CASE message%!16 OF
 WHEN &502
-	IF show_default_help% OR ShowAllHelp% THEN PROCmake_default_task_help(HelpedTaskHandle%, IconBarHelp%)
+	IF ChoicesShowDefaultHelp% OR ShowAllHelp% THEN PROCmake_default_task_help(HelpedTaskHandle%, IconBarHelp%)
 
 WHEN &4AF80
 	PROCurl_bounce(message%)
@@ -543,7 +543,7 @@ PROCget_mode_size
 REM Put an icon on the icon bar.
 
 DIM bar_sprite% 10
-IF display_bubbles% THEN $bar_sprite% = "on" ELSE $bar_sprite% = "off"
+IF ChoicesDisplayBubbles% THEN $bar_sprite% = "on" ELSE $bar_sprite% = "off"
 
 !q% = -1
 q%!4 = 0
@@ -678,7 +678,7 @@ LOCAL message%
 REM If the window is the iconbar, there's nothing to do unless we're shoing
 REM help for iconbar icons.
 
-IF (pointer%!12 <= -2) AND (NOT show_ibar_help%) AND (NOT ShowAllHelp%) THEN ENDPROC
+IF (pointer%!12 <= -2) AND (NOT ChoicesShowIconbarHelp%) AND (NOT ShowAllHelp%) THEN ENDPROC
 
 REM If the icon is a standard icon or window work area, a Message_HelpRequest
 REM is sent to the appropriate task for more details.
@@ -704,7 +704,7 @@ IF pointer%!16 >= -1 THEN
 	SYS "Wimp_SendMessage", 18, message%, pointer%!12, pointer%!16 TO ,,HelpedTaskHandle%
 	PROCmem_free(message%)
 ELSE
-	IF pointer%!16 >= -14 AND pointer%!16 <= -2 AND (show_tool_help% OR ShowAllHelp%) THEN
+	IF pointer%!16 >= -14 AND pointer%!16 <= -2 AND (ChoicesShowToolHelp% OR ShowAllHelp%) THEN
 		$b% = FNmessage_lookup("Furniture.I" + STR$(ABS(pointer%!16)))
 		PROCexpand_text(b%)
 	ENDIF
@@ -1006,7 +1006,7 @@ IF actual_lines% THEN
  REM The bubble window is opened at the correct point to accommodate the panel and its shadow.  The
  REM vales needed by the redraw code are stored and the bubble is marked open.
  :
- shadow_size%=draw_shadow%*-8
+ shadow_size%=ChoicesDrawShadow%*-8
  :
  IF BubbleOpen% THEN PROCwindow_close(BubbleWindow%)
  :
@@ -1048,8 +1048,8 @@ LOCAL shadow_size%, line_height%, x%, y%, x_in%, y_in%, more%, line%
 
 REM Calculate the size of the shadow and the line height in points (120% of fint size).
 
-shadow_size% = draw_shadow% * -8
-line_height% = (font_size% * 1000) / 16 * 1.2
+shadow_size% = ChoicesDrawShadow% * -8
+line_height% = (ChoicesFontSize% * 1000) / 16 * 1.2
 
 REM Go into the WIMP redraw loop.
 
@@ -1069,19 +1069,19 @@ WHILE more%
 	REM If there is to be a shadow, drwa it.  Then draw the box as a filled
 	REM rectangle overlaid by an open rectangle.
 
-	IF draw_shadow% THEN
-		SYS "Wimp_SetColour", shadow_colour%
+	IF ChoicesDrawShadow% THEN
+		SYS "Wimp_SetColour", ChoicesShadowColour%
 		RECTANGLE FILL x% + shadow_size%, y% - BubbleHeight% - shadow_size%, BubbleWidth%, BubbleHeight%
 	ENDIF
 
-	SYS "Wimp_SetColour", background_colour%
+	SYS "Wimp_SetColour", ChoicesBackgroundColour%
 	RECTANGLE FILL x%, y% - BubbleHeight%, BubbleWidth%, BubbleHeight%
-	SYS "Wimp_SetColour", text_colour%
+	SYS "Wimp_SetColour", ChoicesTextColour%
 	RECTANGLE x%, y% - BubbleHeight%, BubbleWidth%, BubbleHeight%
 
 	REM Set the font colours and plot the text line by line.
 
-	SYS "Wimp_SetFontColours",, background_colour%, text_colour%
+	SYS "Wimp_SetFontColours",, ChoicesBackgroundColour%, ChoicesTextColour%
 
 	FOR line% = 0 TO BubbleLines% - 1
 		SYS "Font_Paint", display_font%, LineStart%(line%), &380, x_in%, y_in% - LineYOffset%(line%),,,LineLength%(line%)
@@ -1119,9 +1119,9 @@ REM Set whether bubbles are being opened and update the icon-bar icon appropriat
 REM
 REM Mainly used by clicks on the icon bar, but also by closing the config window.
 :
-display_bubbles%=new_state%
+ChoicesDisplayBubbles%=new_state%
 :
-IF display_bubbles% THEN
+IF ChoicesDisplayBubbles% THEN
  $bar_sprite%="on"
 ELSE
  $bar_sprite%="off"
@@ -1164,12 +1164,12 @@ REM In the event of a mode change, re-bind the font handle and get the new mode 
 :
 LOCAL font_width%
 :
-font_width%=FNconfig_read_real("Font aspect")*font_size%/100
+font_width%=FNconfig_read_real("Font aspect")*ChoicesFontSize%/100
 PROClose_font
 PROCfind_font
 REMSYS "Font_LoseFont",display_font%
-REMSYS "XFont_FindFont",,FNconfig_read_string("Font name"),font_width%,font_size%,0,0 TO display_font% ;flags%
-REMIF (flags% AND 1) THEN SYS "Font_FindFont",,"Trinity.Medium",font_aspect%*font_size%/100,font_size%,0,0 TO display_font%
+REMSYS "XFont_FindFont",,FNconfig_read_string("Font name"),font_width%,ChoicesFontSize%,0,0 TO display_font% ;flags%
+REMIF (flags% AND 1) THEN SYS "Font_FindFont",,"Trinity.Medium",ChoicesFontAspect%*ChoicesFontSize%/100,ChoicesFontSize%,0,0 TO display_font%
 PROCget_mode_size
 ENDPROC
 :
@@ -1263,17 +1263,17 @@ REM ----------------------------------------------------------------------------
 :
 DEF PROCfind_font
 :
-using_desktop_font%=FALSE
+UsingDesktopFont%=FALSE
 :
-IF DesktopFontAvailable% AND font_desktop% THEN
+IF DesktopFontAvailable% AND ChoicesFontUseDesktop% THEN
  SYS "Wimp_ReadSysInfo",8 TO display_font%,symbol_font%
- using_desktop_font%=(display_font%<>0)
+ UsingDesktopFont%=(display_font%<>0)
 ENDIF
 :
-IF NOT using_desktop_font% THEN
- SYS "XFont_FindFont",,font_name$,font_aspect%*font_size%/100,font_size%,0,0 TO display_font% ;flags%
- IF (flags% AND 1) THEN SYS "Font_FindFont",,"Trinity.Medium",font_aspect%*font_size%/100,font_size%,0,0 TO display_font%
- SYS "XFont_FindFont",,"WIMPSymbol",font_aspect%*font_size%/100,font_size%,0,0 TO symbol_font% ;flags%
+IF NOT UsingDesktopFont% THEN
+ SYS "XFont_FindFont",,ChoicesFontName$,ChoicesFontAspect%*ChoicesFontSize%/100,ChoicesFontSize%,0,0 TO display_font% ;flags%
+ IF (flags% AND 1) THEN SYS "Font_FindFont",,"Trinity.Medium",ChoicesFontAspect%*ChoicesFontSize%/100,ChoicesFontSize%,0,0 TO display_font%
+ SYS "XFont_FindFont",,"WIMPSymbol",ChoicesFontAspect%*ChoicesFontSize%/100,ChoicesFontSize%,0,0 TO symbol_font% ;flags%
  IF (flags% AND 1) THEN symbol_font%=0
 ENDIF
 ENDPROC
@@ -1288,7 +1288,7 @@ REM ----------------------------------------------------------------------------
 :
 DEF PROClose_font
 :
-IF NOT using_desktop_font% THEN SYS "Font_LoseFont",display_font% : SYS "Font_LoseFont",symbol_font%
+IF NOT UsingDesktopFont% THEN SYS "Font_LoseFont",display_font% : SYS "Font_LoseFont",symbol_font%
 ENDPROC
 :
 :
