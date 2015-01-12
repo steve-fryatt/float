@@ -28,6 +28,7 @@ TaskMenu:Task Names
 SupportURL:http://www.stevefryatt.org.uk/software/float/
 
 URLFailed:Could not find an application to launch the given URL.
+Running:Floating Help is already running.
 
 Truncated:...|M[help text truncated]
 

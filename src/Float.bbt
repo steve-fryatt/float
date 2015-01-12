@@ -555,8 +555,16 @@ q%!24 = bar_sprite%
 q%!28 = sprite_area%
 q%!32 = 10
 SYS "Wimp_CreateIcon", &40000000, q% TO IconbarIconHandle%
-:
+
 PROCcode_initialise
+
+REM Check to see if we're the only copy of Float running. If we're not,
+REM then just exit quietly.
+
+IF FNfloat_already_running(task_name$, TaskHandle%) THEN
+	PROCwimperror_report(FNmessage_lookup("Running"), 1, %10, "")
+	Quit% = TRUE
+ENDIF
 ENDPROC
 :
 :
@@ -1283,4 +1291,37 @@ DEF PROClose_font
 :
 IF NOT UsingDesktopFont% THEN SYS "Font_LoseFont",display_font% : SYS "Font_LoseFont",symbol_font%
 ENDPROC
+
+
+
+
+REM Scan the currently active task names to see if there are any which share
+REM the supplied task name but have a different task handle. If there are,
+REM return TRUE to indicate another instance of Float has been found.
+REM
+REM \param task_name$		The task name (ours) to look for.
+REM \param ignore_task%		A task handle (ours) to ignore if a match
+REM				is found.
+REM \return			TRUE if a task was found; FALSE if not.
+
+DEF FNfloat_already_running(task_name$, ignore_task%)
+LOCAL next_task%, info%, claim%, end%, found%
+
+claim% = 16
+info% = FNmem_stack(claim%)
+IF info% = 0 THEN =FALSE
+
+next_task% = 0
+found% = FALSE
+
+REPEAT
+	SYS "TaskManager_EnumerateTasks", next_task%, info%, claim% TO next_task%, end%
+	IF end% = info% + claim% THEN
+		IF (FNstring_read(info%!4) = task_name$) AND (!info% <> ignore_task%) THEN found% = TRUE
+	ENDIF
+UNTIL (next_task% < 0) OR (found% = TRUE)
+
+PROCmem_free(info%)
+=found%
+
 

@@ -499,6 +499,7 @@ Development release for testing and feedback.
 <li>Application sprites updated.
 <li>Choices dialogue now filled correctly, with field length bounds-checking and configured font name intact (Ticket #541).
 <li>Position application to right-hand end of iconbar, alongside RISC&nbsp;OS&rsquo;s own Help (Ticket #544).
+<li>Only one copy of <cite>Float</cite> can be running at any given time.
 <li>
 </list>
 
