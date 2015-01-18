@@ -126,7 +126,7 @@ Some of the &ldquo;nice&rdquo; features of <cite>Float</cite> are:
 To install Float, copy the <file>!Float</file> application to a suitable place on your disc. If you want it to run on startup, <cite>Float</cite> should be placed in your boot sequence. On a machine with the new boot structure installed, this can be done by adding it to the list of tasks to be run on startup via Configure. On older machines, you will have to make your own arrangements (but you will probably have made your own boot system anyway).
 
 <box type="warning">
-If you are updating to Float&nbsp;0.40 or later from version 0.36 or earlier, the contents of the application directory have changed. As such, you are advised to delete (or move out of the way) your existing !Float application and replace it with the new one, instead of simply copying the new one on top of the old.
+If you are updating to Float&nbsp;1.00 or later from version 0.36 or earlier, the contents of the application directory have changed. As such, you are advised to delete (or move out of the way) your existing !Float application and replace it with the new one, instead of simply copying the new one on top of the old.
 </box>
 
 By default, <cite>Float</cite> will set the system variable &lt;Help$Start&gt; when it is seen or run by the Filer. This makes it the default interactive help client to be loaded if one is required.
@@ -483,9 +483,9 @@ The following is a list of ideas that will hopefully be added to future versions
 </list>
 
 
-<subhead title="Test Build">
+<subhead title="1.00 (18 January 2015)">
 
-Development release for testing and feedback.
+First full release.
 
 <list>
 <li>Build system revised and licence updated to EUPL.
