@@ -491,7 +491,7 @@ First full release.
 <li>Build system revised and licence updated to EUPL.
 <li>ARMv7 safe and compatible with modern versions of RISC&nbsp;OS&nbsp;5.
 <li>Added <icon>Website</icon> button to <window>Program Info</window> window.
-<li>Changed error system to use Locate 1&rsquo;s WimpError library.
+<li>Changed error system to use Locate&nbsp;1&rsquo;s WimpError library.
 <li>Added <menu>Help</menu> entry to iconbar menu (Ticket #480).
 <li>Interactive help code is more tolerant of unexpected input (Ticket #244).
 <li>New Choices interface implemented, with facility to set applications to be ignored.
