@@ -16,7 +16,7 @@ Version $$version$$ ($$date$$) 
 #Below
 #Line
 #Align Centre
-{f/:Float} is {f*:Open Source}: please read the <License>
+{f/:Float} is {f*:Open Source}: please read the <Licence>
 
 #Indent 2
 #Table Columns 4
@@ -77,7 +77,7 @@ Version $$version$$ ($$date$$)</p>
 
 
 
-<chapter title="License" file="License">
+<chapter title="Licence" file="Licence">
 
 <cite>Float</cite> is licensed under the EUPL, Version&nbsp;1.1 only (the &ldquo;Licence&rdquo;); you may not use this work except in compliance with the Licence.
 
