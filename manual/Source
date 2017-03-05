@@ -37,7 +37,7 @@ If you have any comments about {f/:Float}, or would like to report any bugs that
 Updates to {f/:Float} and more programs for RISC OS computers can be found on my website at <http://www.stevefryatt.org.uk/software/=>#url>.
 
 #Align Centre
-© Stephen Fryatt, 1999-2015 (<steve@stevefryatt.org.uk=>#url mailto:steve@stevefryatt.org.uk>)
+© Stephen Fryatt, 1999-2017 (<steve@stevefryatt.org.uk=>#url mailto:steve@stevefryatt.org.uk>)
 
 A plain text version of this manual is available <here=>*Filer_Run <Float$HelpText\>>.
 #Align Left
@@ -52,7 +52,7 @@ A plain text version of this manual is available <here=>*Filer_Run <Float$HelpTe
 =============================================================================
 Float - Floating Interactive Help                                Version $$version$$
 
-(C) Stephen Fryatt, 1999-2015                  $$date$$
+(C) Stephen Fryatt, 1999-2017                  $$date$$
 =============================================================================
 </literal>
 
@@ -501,6 +501,15 @@ First full release.
 <li>Position application to right-hand end of iconbar, alongside RISC&nbsp;OS&rsquo;s own Help (Ticket #544).
 <li>Only one copy of <cite>Float</cite> can be running at any given time.
 <li>
+</list>
+
+
+<subhead title="1.01 (5 March 2017)">
+
+Update to first full release.
+
+<list>
+<li>Fix <file>!Help</file> so that <menu>Help</menu> menu items work correctly.
 </list>
 
 </chapter>
