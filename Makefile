@@ -1,4 +1,4 @@
-# Copyright 2014-2016, Stephen Fryatt (info@stevefryatt.org.uk)
+# Copyright 2014-2020, Stephen Fryatt (info@stevefryatt.org.uk)
 #
 # This file is part of Float:
 #
@@ -28,6 +28,9 @@ ARCHIVE := float
 
 APP := !Float
 SHHELP := Float,3d6
+
+PACKAGE := Float
+PACKAGELOC := Desktop
 
 SRCS := Float.bbt Choices.bbt Code.bbt Ignore.bbt Mem.bbt TaskMenu.bbt Tokens.bbt
 

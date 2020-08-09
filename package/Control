@@ -1,0 +1,24 @@
+Package: Float
+Version: 1.01-1
+Section: Desktop
+Priority: Optional
+Maintainer: Stephen Fryatt <info@stevefryatt.org.uk>
+Standards-Version: 0.6.0
+Environment: any
+Licence: Free
+Description: An alternative Interactive Help client
+ Float is a floating interactive help application that is intended as a direct
+ replacement for Help that comes with RISC OS. Instead of displaying the help
+ messages in a fixed window, Float uses small panes that follow the mouse
+ around.
+ .
+ All the display options are fully configurable, most from the Choices window
+ and the rest by editing a text file. Full instructions are given in the Help
+ file for doing this. It is possible to hide the help from window furniture as
+ this can be irritating once the basics have been learnt.
+ .
+ Float supports the full set of interactive help messages, including the
+ expansions used by Help and window tool help.
+Homepage: http://www.stevefryatt.org.uk/software/float/
+Components: Apps.Desktop.!Float (Movable)
+Recommends: StrongHelp
