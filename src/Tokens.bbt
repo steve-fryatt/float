@@ -28,9 +28,10 @@ REM Manage the lookup of OS help message tokens.
 REM Locate and open the correct set of message tokens for the version of
 REM RISC OS we are running on at the moment.
 REM
-REM \param resources_path$	The path to the application resources.
+REM It is assumed that by the time this is called, the Resources
+REM search paths will have been set up.
 :
-DEF PROCtokens_initialise(resources_path$) 
+DEF PROCtokens_initialise 
 LOCAL token_file$, file%, var%, os_version%, flags%, size%, token_buffer%
 
 
@@ -56,14 +57,13 @@ REM present.
 
 IF file% = 0 THEN
 	SYS "OS_Byte", 129, 0, &FF TO ,os_version%
-	token_file$ = resources_path$ + "Tokens." + FNresources_find_latest_object(resources_path$ + "Tokens", "", os_version%)
+	token_file$ = FNresources_find_latest_object("Tokens", "", os_version%)
 	SYS "OS_File", 17, token_file$ TO file%
 ENDIF
 
-REM If that also failed, fall back to the old RISC OS 3.1 token data we
-REM have stored locally (Tokens file 164).
+REM Throw an error if we can't find a suitable file.
 
-IF file% = 0 THEN token_file$ = resources_path$ + "Tokens.164"
+IF token_file$ = "" THEN ERROR 255, "Unable to find Tokens file"
 
 REM Open the tokens file previously identified, ready to be used as a
 REM source of Help tokens.

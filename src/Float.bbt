@@ -379,20 +379,25 @@ REM ============================================================================
 DEF PROCinitialise
 :
 REM Initialise the program, including the WIMP.
-:
-LOCAL len%, resources_path$, task_name$, task_sprite$, sprite_area%
-:
-REM Set up the global data blocks and the parameters needed for WIMP registration.
-:
-DIM b% 4000, q% 255, a% 255
-:
-REM Find the correct resources for the current territory.
 
-resources_path$ = FNresources_find_territory_folder("Float:Resources")
+LOCAL len%, resources$, task_name$, task_sprite$, sprite_area%
+
+REM Set up the global data blocks and the parameters needed for WIMP registration.
+
+DIM b% 4000, q% 255, a% 255
+
+REM Locate the application resources.
+
+PROCresources_initialise_paths("Float:Resources", "UK", "Float$Language")
+
+REM Load the messages file.
+
+resources$ = FNresources_find_file("Messages", &FFF)
+IF resources$ = "" THEN ERROR 255, "Unable to find Messages file"
 
 REM Allocate space and load the message file into memory.
 
-PROCmessage_initialise(resources_path$ + "Messages")
+PROCmessage_initialise(resources$)
 
 task_name$  =FNmessage_lookup("TaskName")
 task_sprite$ = FNmessage_lookup("TaskSpr")
@@ -428,15 +433,18 @@ PROCmem_initialise
 
 REM Load the help message tokens
 
-PROCtokens_initialise(resources_path$)
+PROCtokens_initialise
 
 REM Allocate space for the indirected icon data and load the templaes file into memory, creating the
 REM windows as we go.
 
+resources$ = FNresources_find_file("Templates", &FEC)
+IF resources$ = "" THEN ERROR 255, "Unable to find Templates file"
+
 ind_size% = 3000
 DIM ind_area% ind_size%
 
-PROCtemplate_open(resources_path$ + "Templates")
+PROCtemplate_open(resources$)
 
 PROCchoices_initialise
 PROCignore_initialise
@@ -460,9 +468,12 @@ sprite_area% = FNwimpsprite_load_user_sprites("Float:Sprites")
 
 REM Load the menu definitions into memory and create the menus.
 
+resources$ = FNresources_find_file("Menus", &FFD)
+IF resources$ = "" THEN ERROR 255, "Unable to find Menus file"
+
 PROCmenu_initialise
 !q% = InfoWindow%
-PROCmenu_load_templates(resources_path$ + "Menus", q%)
+PROCmenu_load_templates(resources$, q%)
 IconbarMenu% = !q%
 FontMenu% = 0
 TaskMenu% = 0
